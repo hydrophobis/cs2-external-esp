@@ -75,13 +75,6 @@ public:
 	}
 
 	template<class T>
-	void write(uintptr_t address, T value)
-	{
-		pMemory cMemory;
-		cMemory.pfnNtWriteVirtualMemory(handle_, (void*)address, &value, sizeof(T), 0);
-	}
-
-	template<class T>
 	T read(uintptr_t address)
 	{
 		T buffer{};
@@ -91,11 +84,78 @@ public:
 		return buffer;
 	}
 
-	void write_bytes(uintptr_t addr, std::vector<uint8_t> patch)
+	template<class T>
+	bool write(uintptr_t address, const T& value)
 	{
-		pMemory cMemory;
-		cMemory.pfnNtWriteVirtualMemory(handle_, (void*)addr, &patch[0], patch.size(), 0);
+		MEMORY_BASIC_INFORMATION mbi;
+		if (VirtualQueryEx(handle_, (LPVOID)address, &mbi, sizeof(mbi)) == 0 || mbi.State != MEM_COMMIT)
+		{
+			std::cerr << "Invalid or non-committed memory region." << std::endl;
+			return false;
+		}
+
+		DWORD oldProtect;
+		if (!VirtualProtectEx(handle_, (LPVOID)address, sizeof(T), PAGE_READWRITE, &oldProtect))
+		{
+			std::cerr << "VirtualProtectEx failed with error: " << GetLastError() << std::endl;
+			return false;
+		}
+
+		// Use WriteProcessMemory instead of NtWriteVirtualMemory
+		SIZE_T bytesWritten = 0;
+		BOOL result = WriteProcessMemory(handle_, (LPVOID)address, &value, sizeof(T), &bytesWritten);
+
+		// Restore protection
+		VirtualProtectEx(handle_, (LPVOID)address, sizeof(T), oldProtect, &oldProtect);
+
+		if (!result || bytesWritten != sizeof(T))
+		{
+			std::cerr << "WriteProcessMemory failed with error: " << GetLastError() << std::endl;
+			return false;
+		}
+
+		return true;
 	}
+
+
+
+	void write_bytes(uintptr_t addr, const std::vector<uint8_t>& patch)
+	{
+		if (patch.empty())
+			return;
+
+		pMemory cMemory;
+		DWORD oldProtect;
+
+		MEMORY_BASIC_INFORMATION mbi;
+		if (VirtualQueryEx(handle_, (LPCVOID)addr, &mbi, sizeof(mbi)) == sizeof(mbi)) {
+			std::cout << "Protect: " << std::hex << mbi.Protect
+				<< " State: " << mbi.State
+				<< " Type: " << mbi.Type << std::endl;
+		}
+
+		if (VirtualProtectEx(handle_, (LPVOID)addr, patch.size(), PAGE_EXECUTE_READWRITE, &oldProtect))
+		{
+			ULONG bytesWritten = 0;
+			NTSTATUS status = cMemory.pfnNtWriteVirtualMemory(handle_, (void*)addr,
+				(void*)patch.data(),
+				(ULONG)patch.size(),
+				&bytesWritten);
+
+			if (status != 0 || bytesWritten != patch.size())
+			{
+				printf("Write failed! Status: %lx, BytesWritten: %lu\n", status, bytesWritten);
+			}
+
+			// Restore protection
+			VirtualProtectEx(handle_, (LPVOID)addr, patch.size(), oldProtect, &oldProtect);
+		}
+		else
+		{
+			printf("VirtualProtectEx failed on write_bytes at %p\n", (void*)addr);
+		}
+	}
+
 
 	uintptr_t read_multi_address(uintptr_t ptr, std::vector<uintptr_t> offsets)
 	{

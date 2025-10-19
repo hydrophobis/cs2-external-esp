@@ -1,5 +1,17 @@
 ﻿#include "utils.h"
 
+Vector3 CalculateAngle(Vector3 from, Vector3 to) {
+    Vector3 delta = to - from;
+
+    float distance = sqrt(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z);
+    if (distance == 0) return Vector3(0, 0, 0);
+
+    float pitch = -asin(delta.z / distance) * (180.0f / 3.14159f);
+    float yaw = atan2(delta.y, delta.x) * (180.0f / 3.14159f);
+
+    return Vector3(pitch, yaw, 0);
+}
+
 void Utils::update_console_title() {
 	std::string title = "cs2-external-esp";
 

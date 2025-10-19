@@ -195,11 +195,17 @@ namespace updater {
 			offsets::dwEntityList = data["dwEntityList"];
 		if (data["dwViewMatrix"].is_number())
 			offsets::dwViewMatrix = data["dwViewMatrix"];
+		if (data["dwViewAngles"].is_number())
+			offsets::dwViewAngles = data["dwViewAngles"];
 		if (data["dwBuildNumber"].is_number())
 			offsets::dwBuildNumber = data["dwBuildNumber"];
 		if (data["dwPlantedC4"].is_number())
 			offsets::dwPlantedC4 = data["dwPlantedC4"];
 
+		if (data["m_aimPunchAngle"].is_number())
+			offsets::m_aimPunchAngle = data["m_aimPunchAngle"];
+		if (data["m_vecVelocity"].is_number())
+			offsets::m_vecVelocity = data["m_vecVelocity"];
 		if (data["m_flC4Blow"].is_number())
 			offsets::m_flC4Blow = data["m_flC4Blow"];
 		if (data["m_flNextBeep"].is_number())
@@ -252,6 +258,7 @@ namespace updater {
 		data["dwBuildNumber"] = offsets::dwBuildNumber;
 		data["dwPlantedC4"] = offsets::dwPlantedC4;
 
+		data["m_aimPunchAngle"] = offsets::m_aimPunchAngle;
 		data["m_flNextBeep"] = offsets::m_flNextBeep;
 		data["m_flC4Blow"] = offsets::m_flC4Blow;
 		data["m_flTimerLength"] = offsets::m_flTimerLength;

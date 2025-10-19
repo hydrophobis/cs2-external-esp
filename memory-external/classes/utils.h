@@ -5,6 +5,8 @@
 #include "config.hpp"
 #include "vector.hpp"
 
+Vector3 CalculateAngle(Vector3 from, Vector3 to);
+
 class Utils {
 private:
 public:

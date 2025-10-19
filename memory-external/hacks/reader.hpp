@@ -5,6 +5,8 @@
 #include <string>
 #include <mutex>
 
+
+
 struct view_matrix_t {
 	float* operator[ ](int index) {
 		return matrix[index];
@@ -12,6 +14,8 @@ struct view_matrix_t {
 
 	float matrix[4][4];
 };
+
+static Vector3 viewAngle;
 
 class CBones {
 public:
@@ -43,9 +47,11 @@ public:
 	bool is_spotted;
 	int32_t money;
 	float flashAlpha;
+	int handle;
 	std::string weapon;
 	void ReadBones();
 	void ReadHead();
+	Vector3 velocity;
 };
 
 class CGame
@@ -58,19 +64,25 @@ public:
 	uintptr_t buildNumber;
 	bool inGame;
 	Vector3 localOrigin;
+	Vector3 localVelocity;
 	bool isC4Planted;
 	int localTeam;
 	CC4 c4;
 	std::vector<CPlayer> players = {};
+	CPlayer* localPlayerPtr;
+	Vector3 localAimPunch;
 	void init();
 	void loop();
 	void close();
 	Vector3 world_to_screen(Vector3* v);
+	CPlayer* get_nearest_player();
+	uintptr_t localpCSPlayerPawn;
+
 private:
 	view_matrix_t view_matrix;
+	Vector3 lastPunch = { 0, 0, 0 };
 	uintptr_t entity_list;
 	uintptr_t localPlayer;
-	uintptr_t localpCSPlayerPawn;
 	std::uint32_t localPlayerPawn;
 	uintptr_t localList_entry2;
 };

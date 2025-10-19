@@ -38,11 +38,14 @@ namespace updater {
 		inline std::ptrdiff_t dwViewMatrix = 0x0;
 		inline std::ptrdiff_t dwBuildNumber = 0x0;
 		inline std::ptrdiff_t dwPlantedC4 = 0x0;
+		inline std::ptrdiff_t dwViewAngles = 0x0;
 
 		inline std::ptrdiff_t m_flC4Blow = 0x0;
 		inline std::ptrdiff_t m_flNextBeep = 0x0;
 		inline std::ptrdiff_t m_flTimerLength = 0x0;
 
+		inline std::ptrdiff_t m_aimPunchAngle = 0x0;
+		inline std::ptrdiff_t m_vecVelocity = 0x0;
 		inline std::ptrdiff_t m_pInGameMoneyServices = 0x0;
 		inline std::ptrdiff_t m_iAccount = 0x0;
 		inline std::ptrdiff_t m_vecAbsOrigin = 0x0;

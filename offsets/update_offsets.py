@@ -8,6 +8,7 @@ urls = {
     "commits": "https://api.github.com/repos/a2x/cs2-dumper/commits",
     "offsets": "https://raw.githubusercontent.com/a2x/cs2-dumper/main/output/offsets.json",
     "client_dll": "https://github.com/a2x/cs2-dumper/raw/refs/heads/main/output/client_dll.json",
+    "server_dll": "https://github.com/a2x/cs2-dumper/raw/refs/heads/main/output/server_dll.json"
 }
 
 def get_build_number():
@@ -49,6 +50,8 @@ if build_number == 0:
     exit(1)
 
 offsets = get_raw_file(urls["offsets"])
+server = get_raw_file(urls["server_dll"])
+client = get_raw_file(urls["client_dll"])
 
 if not offsets:
     print("Could not find the latest offsets.")
@@ -82,6 +85,7 @@ try:
     offsets_json["dwEntityList"] = offsets["client.dll"]["dwEntityList"]
     offsets_json["dwViewMatrix"] = offsets["client.dll"]["dwViewMatrix"]
     offsets_json["dwPlantedC4"] = offsets["client.dll"]["dwPlantedC4"]
+    offsets_json["dwViewAngles"] = offsets["client.dll"]["dwViewAngles"]
 except KeyError as e:
     print(f"KeyError (#1): {e}")
     print("The structure of the remote offsets.json has changed. Please check the repository for updates.")
@@ -95,6 +99,9 @@ if not client:
 
 try:
     client_json_base = client["client.dll"]["classes"]
+
+    offsets_json["m_vecVelocity"] = server["server.dll"]["classes"]["CBaseEntity"]["fields"]["m_vecVelocity"]
+    offsets_json["m_aimPunchAngle"] = client["client.dll"]["classes"]["C_CSPlayerPawn"]["fields"]["m_aimPunchAngle"]
 
     offsets_json["m_bIsDefusing"] = client_json_base["C_CSPlayerPawn"]["fields"]["m_bIsDefusing"]
     offsets_json["m_ArmorValue"] = client_json_base["C_CSPlayerPawn"]["fields"]["m_ArmorValue"]

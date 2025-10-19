@@ -262,9 +262,9 @@ namespace hj {
 			NtRet = NtDuplicateObject(procHandle, (HANDLE)hInfo->Handles[i].Handle, NtCurrentProcess, &HijackedHandle, PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_DUP_HANDLE, 0, 0);
 			if (!IsHandleValid(HijackedHandle) || !NT_SUCCESS(NtRet))//check is the functions succeeded and check the handle is valid
 			{
-
 				continue;
 			}
+
 
 			//get the process id of the handle we duplicated and check its to our target
 			if (GetProcessId(HijackedHandle) != dwTargetProcessId) {
