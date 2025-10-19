@@ -20,8 +20,12 @@ bool finish = false;
 // Forward declaration
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+// Forward declaration
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 	switch (message)
 	{
@@ -33,6 +37,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		SetWindowLong(hWnd, GWL_EXSTYLE, GetWindowLong(hWnd, GWL_EXSTYLE) | WS_EX_LAYERED);
 =======
+=======
+>>>>>>> Stashed changes
     // Let ImGui handle input when GUI is shown and has focus
     if (show_gui && gui_has_focus)
     {
@@ -76,12 +82,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		FillRect(g::hdcBuffer, &ps.rcPaint, (HBRUSH)GetStockObject(WHITE_BRUSH));
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 
 		if (GetForegroundWindow() == g_game.process->hwnd_) {
 			//render::RenderText(g::hdcBuffer, 10, 10, "cs2 | ESP", RGB(75, 175, 175), 15);
 			hack::loop();
 		}
 =======
+=======
+>>>>>>> Stashed changes
             // Render ESP overlay when game is in focus or GUI is not shown
             if (GetForegroundWindow() == g_game.process->hwnd_ || !show_gui)
                 hack::loop(*render::g_renderer);
@@ -241,6 +250,19 @@ int main() {
         return 0;
     }
 
+<<<<<<< Updated upstream
+=======
+    // Set the global renderer pointer
+    render::g_renderer = &renderer;
+
+    // Initialize ImGui with the DirectX context from renderer
+    if (!InitImGui(hWnd, renderer.m_device.Get(), renderer.GetContext())) {
+        std::cout << "[gui] Failed to initialize ImGui" << std::endl;
+        DestroyWindow(hWnd);
+        return 0;
+    }
+
+>>>>>>> Stashed changes
     // Make window transparent for overlay effect
     SetLayeredWindowAttributes(hWnd, RGB(0, 0, 0), 0, LWA_COLORKEY);
 
@@ -256,6 +278,9 @@ int main() {
     std::cout << "\n[settings] In Game keybinds:\n\t[INSERT] Toggle GUI\n\t[F4] Box ESP\n\t[F5] Team ESP\n\t[F6] Auto update\n\t[F7] Panic\n\t[F8] Skeleton ESP\n\t[F9] Head tracker\n\t[END] Unload esp.\n" << std::endl;
 #else
     std::cout << "\n[settings] In Game keybinds:\n\t[INSERT] Toggle GUI\n\t[F4] Box ESP\n\t[F5] Team ESP\n\t[F7] Panic\n\t[F8] Skeleton ESP\n\t[F9] Head tracker\n\t[END] Unload esp.\n" << std::endl;
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 #endif
 	std::cout << "[settings] Make sure you check the config for additional settings!" << std::endl;
@@ -298,9 +323,12 @@ int main() {
 		if (GetAsyncKeyState(VK_F9) & 0x8000) { config::show_head_tracker = !config::show_head_tracker; config::save(); Beep(700, 100); };
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 =======
+=======
+>>>>>>> Stashed changes
     if (read.joinable())
         read.join();
 >>>>>>> Stashed changes
@@ -311,8 +339,11 @@ int main() {
 	read.detach();
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 	Beep(700, 100); Beep(700, 100);
 =======
+=======
+>>>>>>> Stashed changes
     // Clean up ImGui and renderer
     CleanupImGui();
     render::g_renderer = nullptr;
@@ -324,10 +355,13 @@ int main() {
 	DeleteObject(g::hbmBuffer);
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 	DestroyWindow(hWnd);
 
 	g_game.close();
 
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 #ifdef NDEBUG

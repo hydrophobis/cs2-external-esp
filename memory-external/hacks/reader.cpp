@@ -127,6 +127,7 @@ void CGame::loop() {
 			continue;
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 		if (config::render_distance != -1 && (localOrigin - player.origin).length2d() > config::render_distance) continue;
 		if (player.origin.x == 0 && player.origin.y == 0) continue;
 
@@ -170,10 +171,15 @@ void CGame::loop() {
 				player.weapon = "Invalid Weapon Name";
 		}
 =======
+=======
+>>>>>>> Stashed changes
 		// Read bone array for aimbot targeting
 		//player.gameSceneNode = process->read<uintptr_t>(player.pCSPlayerPawn + updater::offsets::m_pGameSceneNode);
 		//player.boneArray = process->read<uintptr_t>(player.gameSceneNode + 0x210); // m_modelState + 128
 		//player.head = { player.origin.x, player.origin.y, player.origin.z + 73.f }; // For nearest player check
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 		list.push_back(player);
