@@ -126,67 +126,12 @@ void CGame::loop() {
 		if (player.origin.x == localOrigin.x && player.origin.y == localOrigin.y && player.origin.z == localOrigin.z)
 			continue;
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-		if (config::render_distance != -1 && (localOrigin - player.origin).length2d() > config::render_distance) continue;
-		if (player.origin.x == 0 && player.origin.y == 0) continue;
-
-		// Bone array offset updated from 0x1F0 to 0x210 (m_modelState + 128)
-		if (config::show_skeleton_esp) {
-			player.gameSceneNode = process->read<uintptr_t>(player.pCSPlayerPawn + updater::offsets::m_pGameSceneNode);
-			player.boneArray = process->read<uintptr_t>(player.gameSceneNode + 0x210);
-			player.ReadBones();
-		}
-
-		// Apply the same fix here
-		if (config::show_head_tracker && !config::show_skeleton_esp) {
-			player.gameSceneNode = process->read<uintptr_t>(player.pCSPlayerPawn + updater::offsets::m_pGameSceneNode);
-			player.boneArray = process->read<uintptr_t>(player.gameSceneNode + 0x210);
-			player.ReadHead();
-		}
-
-		if (config::show_extra_flags) {
-			/*
-			* Reading values for extra flags is now separated from the other reads
-			* This removes unnecessary memory reads, improving performance when not showing extra flags
-			*/
-			player.is_defusing = process->read<bool>(player.pCSPlayerPawn + updater::offsets::m_bIsDefusing);
-
-			playerMoneyServices = process->read<uintptr_t>(player.entity + updater::offsets::m_pInGameMoneyServices);
-			player.money = process->read<int32_t>(playerMoneyServices + updater::offsets::m_iAccount);
-
-			player.flashAlpha = process->read<float>(player.pCSPlayerPawn + updater::offsets::m_flFlashOverlayAlpha);
-
-			clippingWeapon = process->read<std::uint64_t>(player.pCSPlayerPawn + updater::offsets::m_pClippingWeapon);
-			std::uint64_t firstLevel = process->read<std::uint64_t>(clippingWeapon + 0x10); // First offset
-			weaponData = process->read<std::uint64_t>(firstLevel + 0x20); // Final offset
-			/*weaponData = process->read<std::uint64_t>(clippingWeapon + 0x10);
-			weaponData = process->read<std::uint64_t>(weaponData + updater::offsets::m_szName);*/
-			char buffer[MAX_PATH];
-			process->read_raw(weaponData, buffer, sizeof(buffer));
-			std::string weaponName = std::string(buffer);
-			if (weaponName.compare(0, 7, "weapon_") == 0)
-				player.weapon = weaponName.substr(7, weaponName.length()); // Remove weapon_ prefix
-			else
-				player.weapon = "Invalid Weapon Name";
-		}
-=======
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-		// Read bone array for aimbot targeting
-		//player.gameSceneNode = process->read<uintptr_t>(player.pCSPlayerPawn + updater::offsets::m_pGameSceneNode);
-		//player.boneArray = process->read<uintptr_t>(player.gameSceneNode + 0x210); // m_modelState + 128
-		//player.head = { player.origin.x, player.origin.y, player.origin.z + 73.f }; // For nearest player check
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
+		// **--- MERGE CONFLICT RESOLVED ---**
+		// This block is now fixed. The necessary lines for the aimbot have been
+		// kept and uncommented, while the unused ESP code was removed.
+		player.gameSceneNode = process->read<uintptr_t>(player.pCSPlayerPawn + updater::offsets::m_pGameSceneNode);
+		player.boneArray = process->read<uintptr_t>(player.gameSceneNode + 0x210); // m_modelState + 128
+		player.head = { player.origin.x, player.origin.y, player.origin.z + 73.f }; // For nearest player check
 
 		list.push_back(player);
 	}
@@ -213,7 +158,7 @@ void CGame::loop() {
 
 		// --- Aimbot ---
 		if (GetAsyncKeyState(VK_LMENU) & 0x8000) {
-			uintptr_t targetBoneAddr = target->boneArray + 6 * 32;
+			uintptr_t targetBoneAddr = target->boneArray + 6 * 32; // Head bone
 			Vector3 targetBonePos = g_game.process->read<Vector3>(targetBoneAddr);
 
 			target->velocity = { 0,0,0 };
@@ -232,36 +177,25 @@ void CGame::loop() {
 
 		// Smoothing
 		Vector3 delta = aimTo - viewAngle;
-		// The original code was missing normalization for the delta vector which is needed for smoothing
-		// Normalizing the delta before applying the smoothing factor
-		float deltaLength = sqrt(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z);
+		float deltaLength = sqrt(delta.x * delta.x + delta.y * delta.y);
 		if (deltaLength > 0.0f) {
 			delta.x /= deltaLength;
 			delta.y /= deltaLength;
-			// We don't normalize Z as it's not used in this context
 		}
 
 		float smoothFactor = 0.4f;
 		Vector3 newAngle = viewAngle + delta * smoothFactor;
 
-		// **--- CORRECTED SECTION ---**
-		// Manually clamp and normalize angles to prevent invalid view angles
-		// Clamp pitch (up/down) to avoid view flipping
+		// Manually clamp and normalize angles
 		if (newAngle.x > 89.0f) newAngle.x = 89.0f;
 		if (newAngle.x < -89.0f) newAngle.x = -89.0f;
-
-		// Normalize yaw (left/right) to keep it within standard bounds
 		while (newAngle.y > 180.f) newAngle.y -= 360.f;
 		while (newAngle.y < -180.f) newAngle.y += 360.f;
-
-		// Ensure roll is 0
 		newAngle.z = 0.0f;
-		// **--- END OF CORRECTION ---**
 
-		std::cout << process->write<Vector3>(base_client.base + updater::offsets::dwViewAngles, newAngle) << "\n";
+		process->write<Vector3>(base_client.base + updater::offsets::dwViewAngles, newAngle);
 	}
 }
-
 
 Vector3 CGame::world_to_screen(Vector3* v) {
 	float _x = view_matrix[0][0] * v->x + view_matrix[0][1] * v->y + view_matrix[0][2] * v->z + view_matrix[0][3];

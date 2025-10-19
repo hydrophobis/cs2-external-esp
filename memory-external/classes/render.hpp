@@ -1,88 +1,33 @@
 #pragma once
 #include <wtypes.h>
+#include <d3d11.h>
+#include <d3dcompiler.h>
+#include <DirectXMath.h>
+#include <wrl/client.h>
+#include <d2d1.h>
+#include <dwrite.h>
+#include <vector>
+#include <iostream>
+#include <string>
+
+// Link necessary libraries
+#pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "d3dcompiler.lib")
+#pragma comment(lib, "d2d1.lib")
+#pragma comment(lib, "dwrite.lib")
+
+// Forward declare some globals used for text rendering
+ID2D1Factory* gD2DFactory = nullptr;
+IDWriteFactory* gDWriteFactory = nullptr;
+ID2D1RenderTarget* gD2DRenderTarget = nullptr;
+ID2D1SolidColorBrush* gBrush = nullptr;
+HRESULT hr;
 
 namespace render
 {
-<<<<<<< Updated upstream
-	void DrawLine(HDC hdc, int x1, int y1, int x2, int y2, COLORREF color)
-	{
-		HPEN hPen = CreatePen(PS_SOLID, 2, color);
-		HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
+    using namespace DirectX;
+    using Microsoft::WRL::ComPtr;
 
-		MoveToEx(hdc, x1, y1, NULL);
-		LineTo(hdc, x2, y2);
-
-		SelectObject(hdc, hOldPen);
-		DeleteObject(hPen);
-	}
-
-	void DrawCircle(HDC hdc, int x, int y, int radius, COLORREF color)
-	{
-		HPEN hPen = CreatePen(PS_SOLID, 2, color);
-		HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
-
-		Arc(hdc, x - radius, y - radius, x + radius, y + radius * 1.5, 0, 0, 0, 0);
-
-		SelectObject(hdc, hOldPen);
-		DeleteObject(hPen);
-	}
-
-	void DrawBorderBox(HDC hdc, int x, int y, int w, int h, COLORREF borderColor)
-	{
-		HBRUSH hBorderBrush = CreateSolidBrush(borderColor);
-		HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hBorderBrush);
-
-		RECT rect = {x, y, x + w, y + h};
-		FrameRect(hdc, &rect, hBorderBrush);
-
-		SelectObject(hdc, hOldBrush); // Restore the original brush
-		DeleteObject(hBorderBrush);	  // Delete the temporary brush
-	}
-
-	void DrawFilledBox(HDC hdc, int x, int y, int width, int height, COLORREF color)
-	{
-		HBRUSH hBrush = CreateSolidBrush(color);
-		RECT rect = {x, y, x + width, y + height};
-		FillRect(hdc, &rect, hBrush);
-		DeleteObject(hBrush);
-	}
-
-	void SetTextSize(HDC hdc, int textSize)
-	{
-		LOGFONT lf;
-		HFONT hFont, hOldFont;
-
-		// Initialize the LOGFONT structure
-		ZeroMemory(&lf, sizeof(LOGFONT));
-		lf.lfHeight = -textSize;			// Set the desired text height (negative for height)
-		lf.lfWeight = FW_NORMAL;			// Set the font weight (e.g., FW_NORMAL for normal)
-		lf.lfQuality = ANTIALIASED_QUALITY; // Enable anti-aliasing
-
-		// Create a new font based on the LOGFONT structure
-		hFont = CreateFontIndirect(&lf);
-
-		// Select the new font into the device context and save the old font
-		hOldFont = (HFONT)SelectObject(hdc, hFont);
-
-		// Clean up the old font (when done using it)
-		DeleteObject(hOldFont);
-	}
-
-	void RenderText(HDC hdc, int x, int y, const char *text, COLORREF textColor, int textSize)
-	{
-		SetTextSize(hdc, textSize);
-		SetTextColor(hdc, textColor);
-
-		int len = MultiByteToWideChar(CP_UTF8, 0, text, -1, NULL, 0);
-		wchar_t *wide_text = new wchar_t[len];
-		MultiByteToWideChar(CP_UTF8, 0, text, -1, wide_text, len);
-
-		TextOutW(hdc, x, y, wide_text, len - 1);
-
-		delete[] wide_text;
-	}
-}
-=======
     struct Color
     {
         float r, g, b, a;
@@ -112,7 +57,6 @@ namespace render
     public:
         ComPtr<ID3D11Device> m_device;
 
-        // Add this getter method to access the private m_context
         ID3D11DeviceContext* GetContext() const { return m_context.Get(); }
 
     private:
@@ -272,7 +216,6 @@ namespace render
 
     void DX11Renderer::InitTextRenderer()
     {
-        // ensure COM initialized on this thread before calling this function
         HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &gD2DFactory);
         if (FAILED(hr)) return;
 
@@ -309,29 +252,23 @@ namespace render
         }
     }
 
-
-
     bool DX11Renderer::InitializeShaders()
     {
-        // Vertex shader source
         const char* vsSource = R"(
             cbuffer ConstantBuffer : register(b0)
             {
                 matrix worldViewProjection;
             }
-
             struct VS_INPUT
             {
                 float3 pos : POSITION;
                 float4 color : COLOR;
             };
-
             struct PS_INPUT
             {
                 float4 pos : SV_POSITION;
                 float4 color : COLOR;
             };
-
             PS_INPUT main(VS_INPUT input)
             {
                 PS_INPUT output;
@@ -341,65 +278,62 @@ namespace render
             }
         )";
 
-        // Pixel shader source
         const char* psSource = R"(
             struct PS_INPUT
             {
                 float4 pos : SV_POSITION;
                 float4 color : COLOR;
             };
-
             float4 main(PS_INPUT input) : SV_Target
             {
                 return input.color;
             }
         )";
 
-        // Compile and create vertex shader
-        ComPtr<ID3DBlob> vsBlob, psBlob;
-        HRESULT hr = D3DCompile(vsSource, strlen(vsSource), nullptr, nullptr, nullptr,
-            "main", "vs_5_0", 0, 0, &vsBlob, nullptr);
+        ComPtr<ID3DBlob> vsBlob, psBlob, errorBlob;
+        HRESULT hr = D3DCompile(vsSource, strlen(vsSource), nullptr, nullptr, nullptr, "main", "vs_5_0", 0, 0, &vsBlob, &errorBlob);
+        if (FAILED(hr)) {
+            if (errorBlob) {
+                OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+            }
+            return false;
+        }
+
+        hr = m_device->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), nullptr, &m_vertexShader);
         if (FAILED(hr)) return false;
 
-        hr = m_device->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(),
-            nullptr, &m_vertexShader);
+        hr = D3DCompile(psSource, strlen(psSource), nullptr, nullptr, nullptr, "main", "ps_5_0", 0, 0, &psBlob, &errorBlob);
+        if (FAILED(hr)) {
+            if (errorBlob) {
+                OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+            }
+            return false;
+        }
+
+        hr = m_device->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), nullptr, &m_pixelShader);
         if (FAILED(hr)) return false;
 
-        // Compile and create pixel shader
-        hr = D3DCompile(psSource, strlen(psSource), nullptr, nullptr, nullptr,
-            "main", "ps_5_0", 0, 0, &psBlob, nullptr);
-        if (FAILED(hr)) return false;
-
-        hr = m_device->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(),
-            nullptr, &m_pixelShader);
-        if (FAILED(hr)) return false;
-
-        // Create input layout
         D3D11_INPUT_ELEMENT_DESC inputElementDesc[] = {
             {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
             {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
         };
 
-        hr = m_device->CreateInputLayout(inputElementDesc, 2,
-            vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(),
-            &m_inputLayout);
+        hr = m_device->CreateInputLayout(inputElementDesc, 2, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &m_inputLayout);
         return SUCCEEDED(hr);
     }
 
     void DX11Renderer::BeginFrame()
     {
-        float clearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f }; // Transparent black
+        float clearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
         m_context->ClearRenderTargetView(m_renderTargetView.Get(), clearColor);
         m_context->OMSetRenderTargets(1, m_renderTargetView.GetAddressOf(), nullptr);
 
-        // Set up pipeline state
         m_context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
         m_context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
         m_context->IASetInputLayout(m_inputLayout.Get());
         m_context->RSSetState(m_rasterizerState.Get());
         m_context->OMSetBlendState(m_blendState.Get(), nullptr, 0xFFFFFFFF);
 
-        // Update constant buffer with projection matrix
         ConstantBuffer cb;
         CreateProjectionMatrix(cb.worldViewProjection);
         m_context->UpdateSubresource(m_constantBuffer.Get(), 0, nullptr, &cb, 0, 0);
@@ -429,17 +363,14 @@ namespace render
     void DX11Renderer::DrawCircle(int x, int y, int radius, const Color& color, int segments)
     {
         float angleStep = 2.0f * XM_PI / segments;
-
         for (int i = 0; i < segments; ++i)
         {
             float angle1 = i * angleStep;
             float angle2 = (i + 1) * angleStep;
-
             float x1 = x + radius * cosf(angle1);
             float y1 = y + radius * sinf(angle1);
             float x2 = x + radius * cosf(angle2);
             float y2 = y + radius * sinf(angle2);
-
             AddLineVertex(x1, y1, color);
             AddLineVertex(x2, y2, color);
         }
@@ -447,25 +378,17 @@ namespace render
 
     void DX11Renderer::DrawBorderBox(int x, int y, int w, int h, const Color& borderColor)
     {
-        // Top edge
         DrawLine(x, y, x + w, y, borderColor);
-        // Right edge
         DrawLine(x + w, y, x + w, y + h, borderColor);
-        // Bottom edge
         DrawLine(x + w, y + h, x, y + h, borderColor);
-        // Left edge
         DrawLine(x, y + h, x, y, borderColor);
     }
 
     void DX11Renderer::DrawFilledBox(int x, int y, int width, int height, const Color& color)
     {
-        // Create two triangles to form a rectangle
-        // Triangle 1
         AddTriangleVertex(static_cast<float>(x), static_cast<float>(y), color);
         AddTriangleVertex(static_cast<float>(x + width), static_cast<float>(y), color);
         AddTriangleVertex(static_cast<float>(x), static_cast<float>(y + height), color);
-
-        // Triangle 2
         AddTriangleVertex(static_cast<float>(x + width), static_cast<float>(y), color);
         AddTriangleVertex(static_cast<float>(x + width), static_cast<float>(y + height), color);
         AddTriangleVertex(static_cast<float>(x), static_cast<float>(y + height), color);
@@ -475,16 +398,13 @@ namespace render
     {
         if (m_vertices.empty()) return;
 
-        // Map vertex buffer
         D3D11_MAPPED_SUBRESOURCE mappedResource;
         HRESULT hr = m_context->Map(m_vertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
         if (FAILED(hr)) return;
 
-        // Copy vertices
         memcpy(mappedResource.pData, m_vertices.data(), m_vertices.size() * sizeof(Vertex));
         m_context->Unmap(m_vertexBuffer.Get(), 0);
 
-        // Set vertex buffer and draw lines
         UINT stride = sizeof(Vertex);
         UINT offset = 0;
         m_context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
@@ -496,23 +416,19 @@ namespace render
     {
         if (m_triangleVertices.empty()) return;
 
-        // Map vertex buffer
         D3D11_MAPPED_SUBRESOURCE mappedResource;
         HRESULT hr = m_context->Map(m_vertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
         if (FAILED(hr)) return;
 
-        // Copy vertices
         memcpy(mappedResource.pData, m_triangleVertices.data(), m_triangleVertices.size() * sizeof(Vertex));
         m_context->Unmap(m_vertexBuffer.Get(), 0);
 
-        // Set vertex buffer and draw triangles
         UINT stride = sizeof(Vertex);
         UINT offset = 0;
         m_context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
         m_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         m_context->Draw(static_cast<UINT>(m_triangleVertices.size()), 0);
     }
-
 
     void DX11Renderer::AddLineVertex(float x, float y, const Color& color)
     {
@@ -540,6 +456,7 @@ namespace render
 
     void DX11Renderer::Shutdown()
     {
+        // Release COM objects
     }
 
     inline void DrawLine(int x1, int y1, int x2, int y2, COLORREF color)
@@ -575,14 +492,14 @@ namespace render
         std::wstring wtext(wlen - 1, L'\0');
         MultiByteToWideChar(CP_UTF8, 0, text, -1, &wtext[0], wlen);
 
-        Microsoft::WRL::ComPtr<IDWriteTextFormat> textFormat;
+        ComPtr<IDWriteTextFormat> textFormat;
         gDWriteFactory->CreateTextFormat(
             L"Segoe UI",
             nullptr,
             DWRITE_FONT_WEIGHT_NORMAL,
             DWRITE_FONT_STYLE_NORMAL,
             DWRITE_FONT_STRETCH_NORMAL,
-            10.0f, // font size in DIPs
+            static_cast<float>(size),
             L"en-us",
             &textFormat
         );
@@ -609,6 +526,4 @@ namespace render
             std::cerr << "d2d target lost, please recreate resources\n";
         }
     }
-
 }
->>>>>>> Stashed changes
