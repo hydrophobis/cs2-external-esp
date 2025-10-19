@@ -23,8 +23,12 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 // Forward declaration
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+// Forward declaration
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 	switch (message)
@@ -37,6 +41,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		SetWindowLong(hWnd, GWL_EXSTYLE, GetWindowLong(hWnd, GWL_EXSTYLE) | WS_EX_LAYERED);
 =======
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
     // Let ImGui handle input when GUI is shown and has focus
@@ -83,12 +89,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 
 		if (GetForegroundWindow() == g_game.process->hwnd_) {
 			//render::RenderText(g::hdcBuffer, 10, 10, "cs2 | ESP", RGB(75, 175, 175), 15);
 			hack::loop();
 		}
 =======
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
             // Render ESP overlay when game is in focus or GUI is not shown
@@ -262,6 +271,9 @@ int main() {
         return 0;
     }
 
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
     // Make window transparent for overlay effect
     SetLayeredWindowAttributes(hWnd, RGB(0, 0, 0), 0, LWA_COLORKEY);
@@ -279,6 +291,9 @@ int main() {
 #else
     std::cout << "\n[settings] In Game keybinds:\n\t[INSERT] Toggle GUI\n\t[F4] Box ESP\n\t[F5] Team ESP\n\t[F7] Panic\n\t[F8] Skeleton ESP\n\t[F9] Head tracker\n\t[END] Unload esp.\n" << std::endl;
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
@@ -324,9 +339,12 @@ int main() {
 
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 =======
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
     if (read.joinable())
@@ -340,8 +358,11 @@ int main() {
 
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 	Beep(700, 100); Beep(700, 100);
 =======
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
     // Clean up ImGui and renderer
@@ -356,10 +377,13 @@ int main() {
 
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 	DestroyWindow(hWnd);
 
 	g_game.close();
 
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 =======

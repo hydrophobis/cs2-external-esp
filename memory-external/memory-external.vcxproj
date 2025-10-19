@@ -183,6 +183,10 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+>>>>>>> Stashed changes
 =======
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 >>>>>>> Stashed changes
