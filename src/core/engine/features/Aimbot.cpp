@@ -2,6 +2,7 @@
 #include "core/engine/Engine.hpp"
 #include <thread>
 #include <cmath>
+#include <cstdlib>
 
 void Aimbot::Init() {
     std::thread(Aimbot::Thread).detach();
@@ -13,6 +14,13 @@ void Aimbot::Thread() {
     float rcsRemainderY = 0.f;
     float aimbotRemainderX = 0.f;
     float aimbotRemainderY = 0.f;
+
+    // simple LCG random for deterministicish output
+    static unsigned int rng_state = 12345;
+    auto rng_float = [&]() -> float {
+        rng_state = rng_state * 1103515245 + 12345;
+        return ((rng_state >> 16) & 0x7FFF) / 32767.f; // 0.0 - 1.0
+    };
 
     while (true) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -44,16 +52,18 @@ void Aimbot::Thread() {
                 if (player.team == snapshot.local.team) continue;
                 if (player.bone_list.empty()) continue;
 
-                Vec2_t headPos;
-                auto head_bone = player.bone_list[bone_index::head];
+                Vec2_t bonePos;
+                int targetBone = cfg::aimbot::bone;
+                if (targetBone < 0 || targetBone >= (int)player.bone_list.size()) continue;
+                auto target_bone = player.bone_list[targetBone];
 
-                if (!snapshot.game.view_matrix.wts(head_bone.pos, Vec2_t(screenX * 2, screenY * 2), headPos, false)) continue;
+                if (!snapshot.game.view_matrix.wts(target_bone.pos, Vec2_t(screenX * 2, screenY * 2), bonePos, false)) continue;
 
-                float dist = sqrt(pow(headPos.x - screenCenter.x, 2) + pow(headPos.y - screenCenter.y, 2));
+                float dist = sqrt(pow(bonePos.x - screenCenter.x, 2) + pow(bonePos.y - screenCenter.y, 2));
                 if (dist < bestDist) {
                     bestDist = dist;
                     bestTarget = &player;
-                    bestTargetPos = headPos;
+                    bestTargetPos = bonePos;
                 }
             }
 
@@ -69,8 +79,24 @@ void Aimbot::Thread() {
                     bestTargetPos.y += punch.x * rcsScale * pixelScale;
                 }
 
-                float aimX = (bestTargetPos.x - screenCenter.x) / smooth + aimbotRemainderX;
-                float aimY = (bestTargetPos.y - screenCenter.y) / smooth + aimbotRemainderY;
+                // Humanize: randomize smooth and add jitter per tick
+                float effectiveSmooth = smooth;
+                if (cfg::aimbot::humanize) {
+                    float variance = cfg::aimbot::smooth_variance;
+                    effectiveSmooth = smooth * (1.f - variance + rng_float() * variance * 2.f);
+                }
+
+                float aimX = (bestTargetPos.x - screenCenter.x) / effectiveSmooth;
+                float aimY = (bestTargetPos.y - screenCenter.y) / effectiveSmooth;
+
+                if (cfg::aimbot::humanize && cfg::aimbot::jitter > 0.f) {
+                    float j = cfg::aimbot::jitter;
+                    aimX += (rng_float() - 0.5f) * j;
+                    aimY += (rng_float() - 0.5f) * j;
+                }
+
+                aimX += aimbotRemainderX;
+                aimY += aimbotRemainderY;
                 aimbotRemainderX = 0.f;
                 aimbotRemainderY = 0.f;
                 totalMoveX += aimX;

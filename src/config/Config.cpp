@@ -118,9 +118,13 @@ bool Config::ReadImpl() {
 		cfg::aimbot::fov = data["aimbot"].value("fov", 5.0f);
 		cfg::aimbot::smooth = data["aimbot"].value("smooth", 5.0f);
 		cfg::aimbot::hotkey = data["aimbot"].value("hotkey", 0x12);
+		cfg::aimbot::bone = data["aimbot"].value("bone", 7);
 		cfg::aimbot::rcs = data["aimbot"].value("rcs", false);
 		cfg::aimbot::rcs_x = data["aimbot"].value("rcs_x", 2.0f);
 		cfg::aimbot::rcs_y = data["aimbot"].value("rcs_y", 2.0f);
+		cfg::aimbot::humanize = data["aimbot"].value("humanize", false);
+		cfg::aimbot::smooth_variance = data["aimbot"].value("smooth_variance", 0.3f);
+		cfg::aimbot::jitter = data["aimbot"].value("jitter", 0.5f);
 
 		// utils
 		//cfg::settings::console = data["utils"].value("console", true);
@@ -231,9 +235,13 @@ bool Config::WriteImpl() {
 	data["aimbot"]["fov"] = cfg::aimbot::fov;
 	data["aimbot"]["smooth"] = cfg::aimbot::smooth;
 	data["aimbot"]["hotkey"] = cfg::aimbot::hotkey;
+	data["aimbot"]["bone"] = cfg::aimbot::bone;
 	data["aimbot"]["rcs"] = cfg::aimbot::rcs;
 	data["aimbot"]["rcs_x"] = cfg::aimbot::rcs_x;
 	data["aimbot"]["rcs_y"] = cfg::aimbot::rcs_y;
+	data["aimbot"]["humanize"] = cfg::aimbot::humanize;
+	data["aimbot"]["smooth_variance"] = cfg::aimbot::smooth_variance;
+	data["aimbot"]["jitter"] = cfg::aimbot::jitter;
 
 	// utils
 	//data["utils"]["console"] = cfg::settings::console;

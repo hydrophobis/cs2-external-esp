@@ -1,4 +1,5 @@
 #include "Menu.hpp"
+#include <windows.h>
 
 #include "core/engine/cache/Cache.hpp"
 #include "gui/renderer/Renderer.hpp" // Circular dependency
@@ -241,10 +242,21 @@ void Menu::RenderImpl() {
 					{
 						ImGui::SliderFloat("FOV", &cfg::aimbot::fov, 1.0f, 180.0f, "%.1f");
 						ImGui::SliderFloat("Smoothing", &cfg::aimbot::smooth, 1.0f, 20.0f, "%.1f");
+
+						// Bone selector
+						const char* bone_names[] = { "Head", "Neck", "Chest", "Spine" };
+						int bone_values[] = { 7, 6, 23, 4 };
+						int bone_current = 0;
+						for (int i = 0; i < 4; i++) { if (cfg::aimbot::bone == bone_values[i]) { bone_current = i; break; } }
+						if (ImGui::Combo("Target Bone", &bone_current, bone_names, 4))
+							cfg::aimbot::bone = bone_values[bone_current];
+
+						// Hotkey picker with VK name lookup
 						static bool waiting_for_key = false;
 						if (waiting_for_key) {
 							ImGui::Button("Press any key...", ImVec2(-1, 0));
 							for (int i = 1; i < 256; i++) {
+								if (i == VK_LBUTTON || i == VK_RBUTTON || i == VK_MBUTTON) continue;
 								if (GetAsyncKeyState(i) & 0x8000) {
 									cfg::aimbot::hotkey = i;
 									waiting_for_key = false;
@@ -252,11 +264,30 @@ void Menu::RenderImpl() {
 								}
 							}
 						} else {
-							char btn_label[64];
-							sprintf_s(btn_label, sizeof(btn_label), "Hotkey: 0x%X", cfg::aimbot::hotkey);
+							char key_label[64];
+							UINT scanCode = MapVirtualKey(cfg::aimbot::hotkey, MAPVK_VK_TO_VSC);
+							LONG lParam = (scanCode << 16);
+							if (GetKeyNameTextA(lParam, key_label, 64) == 0)
+								sprintf_s(key_label, sizeof(key_label), "0x%X", cfg::aimbot::hotkey);
+							char btn_label[80];
+							sprintf_s(btn_label, sizeof(btn_label), "Hotkey: %s", key_label);
 							if (ImGui::Button(btn_label, ImVec2(-1, 0)))
 								waiting_for_key = true;
+							if (ImGui::IsItemHovered())
+								ImGui::SetTooltip("Click to rebind");
 						}
+					}
+					ImGui::EndDisabled();
+
+					ImGui::Spacing();
+					ImGui::Text("Humanize");
+					ImGui::Separator();
+
+					ImGui::Checkbox("Enable Humanize", &cfg::aimbot::humanize);
+					ImGui::BeginDisabled(!cfg::aimbot::humanize);
+					{
+						ImGui::SliderFloat("Smooth Variance", &cfg::aimbot::smooth_variance, 0.0f, 1.0f, "%.2f");
+						ImGui::SliderFloat("Jitter", &cfg::aimbot::jitter, 0.0f, 3.0f, "%.2f");
 					}
 					ImGui::EndDisabled();
 
@@ -267,8 +298,8 @@ void Menu::RenderImpl() {
 					ImGui::Checkbox("Enable RCS", &cfg::aimbot::rcs);
 					ImGui::BeginDisabled(!cfg::aimbot::rcs);
 					{
-						ImGui::SliderFloat("RCS X", &cfg::aimbot::rcs_x, 0.0f, 3.0f, "%.2f");
-						ImGui::SliderFloat("RCS Y", &cfg::aimbot::rcs_y, 0.0f, 3.0f, "%.2f");
+						ImGui::SliderFloat("RCS X", &cfg::aimbot::rcs_x, 0.0f, 4.0f, "%.2f");
+						ImGui::SliderFloat("RCS Y", &cfg::aimbot::rcs_y, 0.0f, 4.0f, "%.2f");
 					}
 					ImGui::EndDisabled();
 				}

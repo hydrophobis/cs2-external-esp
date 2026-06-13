@@ -102,9 +102,14 @@ namespace cfg {
     inline float fov = 5.0f;
     inline float smooth = 5.0f;
     inline int hotkey = 0x12; // VK_MENU (Alt)
+    inline int bone = 7; // head
     inline bool rcs = false;
     inline float rcs_x = 2.0f;
     inline float rcs_y = 2.0f;
+
+    inline bool humanize = false;
+    inline float smooth_variance = 0.3f;
+    inline float jitter = 0.5f;
     }
 
 namespace settings {
