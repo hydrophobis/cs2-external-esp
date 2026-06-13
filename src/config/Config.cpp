@@ -113,6 +113,15 @@ bool Config::ReadImpl() {
 		cfg::world::velocity::pos = JsonToVec2(data["world"]["velocity"], "pos", { 10.f, 400.f });
 		cfg::world::velocity::size = JsonToVec2(data["world"]["velocity"], "size", { 400.f, 100.f });
 
+		// aimbot
+		cfg::aimbot::enabled = data["aimbot"].value("enabled", false);
+		cfg::aimbot::fov = data["aimbot"].value("fov", 5.0f);
+		cfg::aimbot::smooth = data["aimbot"].value("smooth", 5.0f);
+		cfg::aimbot::hotkey = data["aimbot"].value("hotkey", 0x12);
+		cfg::aimbot::rcs = data["aimbot"].value("rcs", false);
+		cfg::aimbot::rcs_x = data["aimbot"].value("rcs_x", 2.0f);
+		cfg::aimbot::rcs_y = data["aimbot"].value("rcs_y", 2.0f);
+
 		// utils
 		//cfg::settings::console = data["utils"].value("console", true);
 		cfg::settings::watermark = data["utils"].value("watermark", true);
@@ -216,6 +225,15 @@ bool Config::WriteImpl() {
 
 	ColorToJson(fcol, "scoped_team", cfg::esp::colors::flags::scoped_team);
 	ColorToJson(fcol, "scoped_enemy", cfg::esp::colors::flags::scoped_enemy);
+
+	// aimbot
+	data["aimbot"]["enabled"] = cfg::aimbot::enabled;
+	data["aimbot"]["fov"] = cfg::aimbot::fov;
+	data["aimbot"]["smooth"] = cfg::aimbot::smooth;
+	data["aimbot"]["hotkey"] = cfg::aimbot::hotkey;
+	data["aimbot"]["rcs"] = cfg::aimbot::rcs;
+	data["aimbot"]["rcs_x"] = cfg::aimbot::rcs_x;
+	data["aimbot"]["rcs_y"] = cfg::aimbot::rcs_y;
 
 	// utils
 	//data["utils"]["console"] = cfg::settings::console;

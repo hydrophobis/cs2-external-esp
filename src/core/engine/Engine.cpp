@@ -2,6 +2,7 @@
 
 #include "core/offsets/Dumper.hpp"
 #include "core/engine/cache/Cache.hpp"
+#include "core/engine/features/Aimbot.hpp"
 
 bool Engine::Init() {
     return GetInstance().InitImpl();
@@ -44,6 +45,8 @@ bool Engine::InitImpl() {
     if (!cfg::dev::console)
         LogHelper::Free();
 #endif
+
+    Aimbot::Init();
 
     std::thread(&Engine::Thread, this).detach();
 

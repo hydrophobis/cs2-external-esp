@@ -116,6 +116,16 @@ bool Player::UpdatePawn() {
 	this->flashed = p->read<float>(pawn + offsets::pawn::m_flFlashOverlayAlpha) > 0;
 	this->scoped = p->read<bool>(pawn + offsets::pawn::m_bIsScoped);
 
+    this->shotsFired = p->read<int>(pawn + offsets::pawn::m_iShotsFired);
+
+    // Read aim punch via AimPunchServices poiner
+    uintptr_t aimPunchServices = p->read<uintptr_t>(pawn + offsets::pawn::m_pAimPunchServices);
+    if (aimPunchServices) {
+        this->aimPunch = p->read<Vec2_t>(aimPunchServices + offsets::pawn::aimPunchServices::m_predictableBaseAngle);
+    } else {
+        this->aimPunch = { 0.f, 0.f };
+    }
+
 	if (!UpdateSkeleton()) {
 		LOGF(FATAL, "Failed to update skeleton");
 		return false;

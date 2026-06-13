@@ -3,6 +3,7 @@
 
 enum Tab {
     PLAYER,
+    AIMBOT,
     WORLD,
     SETTINGS
 };
@@ -17,6 +18,7 @@ struct TabItem
 static const TabItem tabs[] =
 {
     { Tab::PLAYER,      "Player",   Icons::PERSON },
+ { Tab::AIMBOT, "Aimbot", Icons::RELOAD },
     { Tab::WORLD,       "World",    Icons::GLOBE },
     { Tab::SETTINGS,    "Settings", Icons::SETTINGS }
 };

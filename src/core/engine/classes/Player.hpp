@@ -31,6 +31,9 @@ public:
     bool defusing = false;
     bool localplayer = false;
 
+    Vec2_t aimPunch;
+    int shotsFired = 0;
+
     char name[32];
     //std::string name;
     uint64_t steam_id{};

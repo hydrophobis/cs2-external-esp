@@ -231,6 +231,47 @@ void Menu::RenderImpl() {
 					}
 					ImGui::EndGroup();
 				}
+				else if (active_tab == Tab::AIMBOT)
+				{
+					ImGui::Text("Aimbot");
+					ImGui::Separator();
+
+					ImGui::Checkbox("Enable Aimbot", &cfg::aimbot::enabled);
+					ImGui::BeginDisabled(!cfg::aimbot::enabled);
+					{
+						ImGui::SliderFloat("FOV", &cfg::aimbot::fov, 1.0f, 180.0f, "%.1f");
+						ImGui::SliderFloat("Smoothing", &cfg::aimbot::smooth, 1.0f, 20.0f, "%.1f");
+						static bool waiting_for_key = false;
+						if (waiting_for_key) {
+							ImGui::Button("Press any key...", ImVec2(-1, 0));
+							for (int i = 1; i < 256; i++) {
+								if (GetAsyncKeyState(i) & 0x8000) {
+									cfg::aimbot::hotkey = i;
+									waiting_for_key = false;
+									break;
+								}
+							}
+						} else {
+							char btn_label[64];
+							sprintf_s(btn_label, sizeof(btn_label), "Hotkey: 0x%X", cfg::aimbot::hotkey);
+							if (ImGui::Button(btn_label, ImVec2(-1, 0)))
+								waiting_for_key = true;
+						}
+					}
+					ImGui::EndDisabled();
+
+					ImGui::Spacing();
+					ImGui::Text("Recoil Control");
+					ImGui::Separator();
+
+					ImGui::Checkbox("Enable RCS", &cfg::aimbot::rcs);
+					ImGui::BeginDisabled(!cfg::aimbot::rcs);
+					{
+						ImGui::SliderFloat("RCS X", &cfg::aimbot::rcs_x, 0.0f, 3.0f, "%.2f");
+						ImGui::SliderFloat("RCS Y", &cfg::aimbot::rcs_y, 0.0f, 3.0f, "%.2f");
+					}
+					ImGui::EndDisabled();
+				}
 				else if (active_tab == Tab::WORLD)
 				{
 					ImGui::Text("Bomb");

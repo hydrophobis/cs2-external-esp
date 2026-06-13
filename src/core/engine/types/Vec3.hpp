@@ -236,6 +236,26 @@ public:
 		};
 	}
 
+	static Vec3_t FromAngle(float pitch, float yaw) noexcept {
+		float rad_pitch = pitch * (std::numbers::pi_v<float> / 180.0f);
+		float rad_yaw = yaw * (std::numbers::pi_v<float> / 180.0f);
+		return Vec3_t{
+			std::cos(rad_pitch) * std::cos(rad_yaw),
+			std::cos(rad_pitch) * std::sin(rad_yaw),
+			-std::sin(rad_pitch)
+		};
+	}
+
+	static Vec3_t AngleNormalize(const Vec3_t& angles) {
+		Vec3_t result = angles;
+		while (result.x > 89.0f) result.x -= 180.0f;
+		while (result.x < -89.0f) result.x += 180.0f;
+		while (result.y > 180.0f) result.y -= 360.0f;
+		while (result.y < -180.0f) result.y += 360.0f;
+		result.z = 0.0f;
+		return result;
+	}
+
 	__forceinline float normalize() {
 		float len = length();
 

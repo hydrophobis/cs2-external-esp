@@ -97,7 +97,17 @@ namespace cfg {
 		}
 	}
 
-	namespace settings {
+	namespace aimbot {
+    inline bool enabled = false;
+    inline float fov = 5.0f;
+    inline float smooth = 5.0f;
+    inline int hotkey = 0x12; // VK_MENU (Alt)
+    inline bool rcs = false;
+    inline float rcs_x = 2.0f;
+    inline float rcs_y = 2.0f;
+    }
+
+namespace settings {
 		inline bool watermark = true;
 		inline bool streamproof = false;
 		inline bool vsync = false;

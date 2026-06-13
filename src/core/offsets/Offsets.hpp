@@ -6,6 +6,8 @@ namespace offsets
 	inline DWORD localPlayerController;
 	inline DWORD globalVars;
 	inline DWORD plantedC4;
+inline DWORD localPlayerPawn;
+inline DWORD csgoInput;
 
 	// engine2.dll
 	inline DWORD buildNumber;
@@ -44,6 +46,16 @@ namespace offsets
 		constexpr std::ptrdiff_t m_iClip1 = 0x16D8; // int32 - C_BasePlayerWeapon
 		constexpr std::ptrdiff_t m_bInReload = 0x17F4; // bool - C_CSWeaponBase
 		constexpr std::ptrdiff_t m_pObserverServices = 0x11F8; // CPlayer_ObserverServices*
+
+    constexpr std::ptrdiff_t m_pAimPunchServices = 0x1490; // CCSPlayer_AimPunchServices*
+    constexpr std::ptrdiff_t m_iShotsFired = 0x1C64; // int32
+
+    // AimPunchServices offsets (read pointer from m_pAimPunchServices, then offset from that)
+    namespace aimPunchServices {
+        constexpr std::ptrdiff_t m_predictableBaseAngle = 0x50; // QAngle - current aim punch (predictable component)
+    }
+
+		constexpr std::ptrdiff_t m_vecViewOffset = 0x1548; // Vector - eye position offset
 	}
 
 	namespace bomb {
@@ -52,6 +64,10 @@ namespace offsets
 		constexpr std::ptrdiff_t m_nBombSite = 0x1164; // int32
 
 		constexpr std::ptrdiff_t m_vecAbsOrigin = 0xC8; // VectorWS - CGameSceneNode 
+	}
+
+	namespace input {
+		constexpr std::ptrdiff_t viewAngles = 0x4; // QAngle offset from csgoInput pointer
 	}
 
 	namespace bone {
@@ -91,7 +107,7 @@ namespace offsets
 			"89 05 ?? ?? ?? ?? "
 			"48 8B C6 48 89 34 EA 80 BE";
 
-#if 0
+#if 1
 		const std::string localPlayerPawn = "48 8D 05 ?? ?? ?? ?? C3 CC CC CC CC CC CC CC CC 48 83 EC ?? 8B 0D";
 
 		const std::string csgoInput = "48 89 05 ?? ?? ?? ?? 0F 57 C0 0F 11 05";
