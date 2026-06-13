@@ -1,4 +1,6 @@
-# 🕹️ CS2 External ESP | Recode
+# 🕹️ CS2 External ESP | Recode + Aiming Stuff
+
+just upgraded the RCS should be better now
 
 Simple external ESP for Counter-Strike 2. After years of development the codebase has been modernized for clarity and ease of use, featuring a redesigned interface, noticeable performance improvements, several quality-of-life additions, and automatic offset scanning to help maintain compatibility through game updates.
 
