@@ -78,7 +78,6 @@ void Aimbot::Thread() {
             }
         }
 
-        if (cfg::aimbot::rcs) {
         if (!hasTarget) {
             aimbotRemainderX = 0.f;
             aimbotRemainderY = 0.f;
