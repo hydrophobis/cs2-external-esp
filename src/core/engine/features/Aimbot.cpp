@@ -22,93 +22,112 @@ void Aimbot::Thread() {
         auto snapshot = Cache::CopySnapshot();
         if (!snapshot.local.alive) continue;
 
-        if (cfg::aimbot::enabled) {
-            float screenX = static_cast<float>(GetSystemMetrics(SM_CXSCREEN)) / 2.f;
-            float screenY = static_cast<float>(GetSystemMetrics(SM_CYSCREEN)) / 2.f;
-            Vec2_t screenCenter = { screenX, screenY };
+        float screenX = static_cast<float>(GetSystemMetrics(SM_CXSCREEN)) / 2.f;
+        float screenY = static_cast<float>(GetSystemMetrics(SM_CYSCREEN)) / 2.f;
+        Vec2_t screenCenter = { screenX, screenY };
 
-            if ((GetAsyncKeyState(cfg::aimbot::hotkey) & 0x8000) != 0) {
-                Player* bestTarget = nullptr;
-                float bestDist = cfg::aimbot::fov * 10.f;
+        float totalMoveX = 0.f;
+        float totalMoveY = 0.f;
 
-                Vec2_t bestTargetPos = { 0, 0 };
+        bool hasTarget = false;
 
-                for (auto& player : snapshot.players) {
-                    if (!player.alive || player.localplayer) continue;
-                    if (player.team == snapshot.local.team) continue;
-                    if (player.bone_list.empty()) continue;
+        // Aimbot
+        bool aimKeyDown = (GetAsyncKeyState(cfg::aimbot::hotkey) & 0x8000) != 0;
+        if (cfg::aimbot::enabled && aimKeyDown) {
+            Player* bestTarget = nullptr;
+            float bestDist = cfg::aimbot::fov * 10.f;
+            Vec2_t bestTargetPos = { 0, 0 };
 
-                    Vec2_t headPos;
-                    auto head_bone = player.bone_list[bone_index::head];
 
-                    if (!snapshot.game.view_matrix.wts(head_bone.pos, Vec2_t(screenX * 2, screenY * 2), headPos, false)) continue;
+            for (auto& player : snapshot.players) {
+                if (!player.alive || player.localplayer) continue;
+                if (player.team == snapshot.local.team) continue;
+                if (player.bone_list.empty()) continue;
 
-                    float dist = sqrt(pow(headPos.x - screenCenter.x, 2) + pow(headPos.y - screenCenter.y, 2));
-                    if (dist < bestDist) {
-                        bestDist = dist;
-                        bestTarget = &player;
-                        bestTargetPos = headPos;
-                    }
+                Vec2_t headPos;
+                auto head_bone = player.bone_list[bone_index::head];
+
+                if (!snapshot.game.view_matrix.wts(head_bone.pos, Vec2_t(screenX * 2, screenY * 2), headPos, false)) continue;
+
+                float dist = sqrt(pow(headPos.x - screenCenter.x, 2) + pow(headPos.y - screenCenter.y, 2));
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    bestTarget = &player;
+                    bestTargetPos = headPos;
+                }
+            }
+
+            if (bestTarget) {
+                hasTarget = true;
+                float smooth = cfg::aimbot::smooth > 0.1f ? cfg::aimbot::smooth : 1.0f;
+                // Offset target by current punch
+                if (cfg::aimbot::rcs && snapshot.local.shotsFired > 0) {
+                    Vec2_t punch = snapshot.local.aimPunch;
+                    float rcsScale = -1.f; // no idea why this needs to be negative but eh
+                    float pixelScale = 15.0f;
+                    bestTargetPos.x -= punch.y * rcsScale * pixelScale;
+                    bestTargetPos.y += punch.x * rcsScale * pixelScale;
                 }
 
-                if (bestTarget) {
-                    float smooth = cfg::aimbot::smooth > 0.1f ? cfg::aimbot::smooth : 1.0f;
-
-                    float diffX = (bestTargetPos.x - screenCenter.x) / smooth + aimbotRemainderX;
-                    float diffY = (bestTargetPos.y - screenCenter.y) / smooth + aimbotRemainderY;
-
-                    int moveX = static_cast<int>(diffX);
-                    int moveY = static_cast<int>(diffY);
-
-                    aimbotRemainderX = diffX - moveX;
-                    aimbotRemainderY = diffY - moveY;
-
-                    if (moveX != 0 || moveY != 0) {
-                        mouse_event(MOUSEEVENTF_MOVE, static_cast<DWORD>(moveX), static_cast<DWORD>(moveY), 0, 0);
-                    }
-                }
-            } else {
+                float aimX = (bestTargetPos.x - screenCenter.x) / smooth + aimbotRemainderX;
+                float aimY = (bestTargetPos.y - screenCenter.y) / smooth + aimbotRemainderY;
                 aimbotRemainderX = 0.f;
                 aimbotRemainderY = 0.f;
+                totalMoveX += aimX;
+                totalMoveY += aimY;
             }
         }
 
         if (cfg::aimbot::rcs) {
+        if (!hasTarget) {
+            aimbotRemainderX = 0.f;
+            aimbotRemainderY = 0.f;
+        }
+
+        if (cfg::aimbot::rcs && !hasTarget) {
             auto& local = snapshot.local;
 
-            // m_predictableBaseAngle lingers after firing stops,
-            // so reset when not actively shooting
             if (local.shotsFired == 0) {
                 oldPunch = { 0.f, 0.f };
                 rcsRemainderX = 0.f;
                 rcsRemainderY = 0.f;
-                continue;
+            } else {
+                Vec2_t punch = local.aimPunch;
+                Vec2_t delta = { punch.x - oldPunch.x, punch.y - oldPunch.y };
+
+                float rcsScale = 2.0f;
+                float pixelScale = 15.0f;
+
+                float rcsX = (delta.y) * rcsScale * pixelScale + rcsRemainderX;
+                float rcsY = -(delta.x) * rcsScale * pixelScale + rcsRemainderY;
+                rcsRemainderX = 0.f;
+                rcsRemainderY = 0.f;
+                totalMoveX += rcsX;
+                totalMoveY += rcsY;
+
+                oldPunch = local.aimPunch;
             }
-
-            Vec2_t punch = local.aimPunch;
-            Vec2_t delta = { punch.x - oldPunch.x, punch.y - oldPunch.y };
-
-            float rcsScale = 2.0f;
-            float pixelScale = 15.0f;
-
-            float dy = -(delta.x) * rcsScale * pixelScale + rcsRemainderY;
-            float dx = (delta.y) * rcsScale * pixelScale + rcsRemainderX;
-
-            int moveX = static_cast<int>(dx);
-            int moveY = static_cast<int>(dy);
-
-            rcsRemainderX = dx - moveX;
-            rcsRemainderY = dy - moveY;
-
-            if (moveX != 0 || moveY != 0) {
-                mouse_event(MOUSEEVENTF_MOVE, static_cast<DWORD>(moveX), static_cast<DWORD>(moveY), 0, 0);
-            }
-
-            oldPunch = local.aimPunch;
-        } else {
+        } else if (!cfg::aimbot::rcs) {
             oldPunch = { 0.f, 0.f };
             rcsRemainderX = 0.f;
             rcsRemainderY = 0.f;
+        }
+
+        int moveX = static_cast<int>(totalMoveX);
+        int moveY = static_cast<int>(totalMoveY);
+
+        float fracX = totalMoveX - static_cast<float>(moveX);
+        float fracY = totalMoveY - static_cast<float>(moveY);
+        if (hasTarget) {
+            aimbotRemainderX = fracX;
+            aimbotRemainderY = fracY;
+        } else if (cfg::aimbot::rcs && snapshot.local.shotsFired > 0) {
+            rcsRemainderX = fracX;
+            rcsRemainderY = fracY;
+        }
+
+        if (moveX != 0 || moveY != 0) {
+            mouse_event(MOUSEEVENTF_MOVE, static_cast<DWORD>(moveX), static_cast<DWORD>(moveY), 0, 0);
         }
     }
 }
