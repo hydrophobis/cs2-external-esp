@@ -110,6 +110,9 @@ namespace cfg {
     inline bool humanize = false;
     inline float smooth_variance = 0.3f;
     inline float jitter = 0.5f;
+
+    inline bool velocity_comp = false;
+    inline float velocity_comp_scale = 0.1f;
     }
 
 namespace settings {

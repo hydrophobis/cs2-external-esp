@@ -52,12 +52,27 @@ void Aimbot::Thread() {
                 if (player.team == snapshot.local.team) continue;
                 if (player.bone_list.empty()) continue;
 
-                Vec2_t bonePos;
                 int targetBone = cfg::aimbot::bone;
                 if (targetBone < 0 || targetBone >= (int)player.bone_list.size()) continue;
                 auto target_bone = player.bone_list[targetBone];
 
-                if (!snapshot.game.view_matrix.wts(target_bone.pos, Vec2_t(screenX * 2, screenY * 2), bonePos, false)) continue;
+                // Predict target
+                Vec3_t aimPos = target_bone.pos;
+                if (cfg::aimbot::velocity_comp) {
+                    float scale = cfg::aimbot::velocity_comp_scale;
+                    // relative velocity
+                    Vec3_t relVel = {
+                        player.vel.x - snapshot.local.vel.x,
+                        player.vel.y - snapshot.local.vel.y,
+                        player.vel.z - snapshot.local.vel.z
+                    };
+                    aimPos.x += relVel.x * scale;
+                    aimPos.y += relVel.y * scale;
+                    aimPos.z += relVel.z * scale;
+                }
+
+                Vec2_t bonePos;
+                if (!snapshot.game.view_matrix.wts(aimPos, Vec2_t(screenX * 2, screenY * 2), bonePos, false)) continue;
 
                 float dist = sqrt(pow(bonePos.x - screenCenter.x, 2) + pow(bonePos.y - screenCenter.y, 2));
                 if (dist < bestDist) {

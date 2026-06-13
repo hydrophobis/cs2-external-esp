@@ -292,6 +292,16 @@ void Menu::RenderImpl() {
 					ImGui::EndDisabled();
 
 					ImGui::Spacing();
+					ImGui::Text("Velocity Compensation");
+					ImGui::Separator();
+					ImGui::Checkbox("Enable Velocity Comp", &cfg::aimbot::velocity_comp);
+					ImGui::BeginDisabled(!cfg::aimbot::velocity_comp);
+					{
+						ImGui::SliderFloat("Lead Time", &cfg::aimbot::velocity_comp_scale, 0.0f, 0.3f, "%.3f");
+					}
+					ImGui::EndDisabled();
+
+					ImGui::Spacing();
 					ImGui::Text("Recoil Control");
 					ImGui::Separator();
 

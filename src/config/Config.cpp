@@ -125,6 +125,8 @@ bool Config::ReadImpl() {
 		cfg::aimbot::humanize = data["aimbot"].value("humanize", false);
 		cfg::aimbot::smooth_variance = data["aimbot"].value("smooth_variance", 0.3f);
 		cfg::aimbot::jitter = data["aimbot"].value("jitter", 0.5f);
+		cfg::aimbot::velocity_comp = data["aimbot"].value("velocity_comp", false);
+		cfg::aimbot::velocity_comp_scale = data["aimbot"].value("velocity_comp_scale", 0.1f);
 
 		// utils
 		//cfg::settings::console = data["utils"].value("console", true);
@@ -242,6 +244,8 @@ bool Config::WriteImpl() {
 	data["aimbot"]["humanize"] = cfg::aimbot::humanize;
 	data["aimbot"]["smooth_variance"] = cfg::aimbot::smooth_variance;
 	data["aimbot"]["jitter"] = cfg::aimbot::jitter;
+	data["aimbot"]["velocity_comp"] = cfg::aimbot::velocity_comp;
+	data["aimbot"]["velocity_comp_scale"] = cfg::aimbot::velocity_comp_scale;
 
 	// utils
 	//data["utils"]["console"] = cfg::settings::console;
