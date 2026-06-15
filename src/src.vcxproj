@@ -187,6 +187,8 @@
     <ClCompile Include="core\engine\classes\ObserverServices.cpp" />
     <ClCompile Include="core\engine\Engine.cpp" />
     <ClCompile Include="core\engine\features\Aimbot.cpp" />
+    <ClCompile Include="core\engine\features\Bhop.cpp" />
+    <ClCompile Include="core\engine\features\Misc.cpp" />
     <ClCompile Include="core\engine\classes\Game.cpp" />
     <ClCompile Include="core\engine\classes\Globals.cpp" />
     <ClCompile Include="core\engine\classes\Player.cpp" />
@@ -228,6 +230,8 @@
     <ClInclude Include="core\engine\classes\ObserverServices.hpp" />
     <ClInclude Include="core\engine\Engine.hpp" />
     <ClInclude Include="core\engine\features\Aimbot.hpp" />
+    <ClInclude Include="core\engine\features\Bhop.hpp" />
+    <ClInclude Include="core\engine\features\Misc.hpp" />
     <ClInclude Include="core\engine\types\Color.hpp" />
     <ClInclude Include="core\engine\types\Types.hpp" />
     <ClInclude Include="core\engine\types\Matrix.hpp" />

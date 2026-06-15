@@ -1,6 +1,7 @@
 #include "Menu.hpp"
 #include <windows.h>
 
+#include "config/Config.hpp"
 #include "core/engine/cache/Cache.hpp"
 #include "gui/renderer/Renderer.hpp" // Circular dependency
 #include "gui/renderer/window/Window.hpp" // Circular dependency
@@ -312,6 +313,18 @@ void Menu::RenderImpl() {
 						ImGui::SliderFloat("RCS Y", &cfg::aimbot::rcs_y, 0.0f, 4.0f, "%.2f");
 					}
 					ImGui::EndDisabled();
+
+					ImGui::Spacing();
+					ImGui::Text("Soft Aim");
+					ImGui::Separator();
+
+					ImGui::Checkbox("Enable Soft Aim", &cfg::aimbot::soft_aim);
+					ImGui::SetItemTooltip("Caps move per tick so the aim only nudges when already close to target");
+					ImGui::BeginDisabled(!cfg::aimbot::soft_aim);
+					{
+						ImGui::SliderFloat("Max Move (px)", &cfg::aimbot::soft_aim_max_move, 0.5f, 20.0f, "%.1f");
+					}
+					ImGui::EndDisabled();
 				}
 				else if (active_tab == Tab::WORLD)
 				{
@@ -361,6 +374,73 @@ void Menu::RenderImpl() {
 					}
 					ImGui::EndDisabled();
 				}
+				else if (active_tab == Tab::MISC)
+				{
+					ImGui::Text("Movement");
+					ImGui::Separator();
+
+					ImGui::Checkbox("Bunny Hop", &cfg::misc::bhop);
+					ImGui::SetItemTooltip("Auto-jumps on landing while space is held");
+
+					ImGui::Checkbox("Strafe Helper", &cfg::misc::strafe::helper);
+					ImGui::SetItemTooltip("Corrects A/D to match mouse turn direction mid-air");
+
+					ImGui::Checkbox("Auto Strafe", &cfg::misc::strafe::autostrafe);
+					ImGui::SetItemTooltip("Fully automates A/D strafing while in the air");
+
+					ImGui::Spacing();
+					ImGui::Text("Combat");
+					ImGui::Separator();
+
+					ImGui::Checkbox("Anti Flash", &cfg::misc::anti_flash);
+					ImGui::SetItemTooltip("Zeroes flash alpha every tick — you never go blind");
+
+					ImGui::Checkbox("Trigger Bot", &cfg::misc::triggerbot::enabled);
+					ImGui::BeginDisabled(!cfg::misc::triggerbot::enabled);
+					{
+						ImGui::SliderFloat("Trigger FOV", &cfg::misc::triggerbot::fov, 0.5f, 20.0f, "%.1f px");
+						ImGui::SliderInt("Trigger Delay", &cfg::misc::triggerbot::delay_ms, 0, 300, "%d ms");
+
+						static bool waiting_for_trigger_key = false;
+						if (waiting_for_trigger_key) {
+							ImGui::Button("Press any key...", ImVec2(-1, 0));
+							for (int i = 1; i < 256; i++) {
+								if (GetAsyncKeyState(i) & 0x8000) {
+									cfg::misc::triggerbot::hotkey = i;
+									waiting_for_trigger_key = false;
+									break;
+								}
+							}
+						} else {
+							char key_label[64];
+							UINT sc = MapVirtualKey(cfg::misc::triggerbot::hotkey, MAPVK_VK_TO_VSC);
+							if (GetKeyNameTextA((LONG)(sc << 16), key_label, 64) == 0)
+								sprintf_s(key_label, sizeof(key_label), "0x%X", cfg::misc::triggerbot::hotkey);
+							char btn_label[80];
+							sprintf_s(btn_label, sizeof(btn_label), "Hotkey: %s", key_label);
+							if (ImGui::Button(btn_label, ImVec2(-1, 0)))
+								waiting_for_trigger_key = true;
+							if (ImGui::IsItemHovered())
+								ImGui::SetTooltip("Hold this key to enable triggerbot");
+						}
+					}
+					ImGui::EndDisabled();
+
+					ImGui::Spacing();
+					ImGui::Text("Visual");
+					ImGui::Separator();
+
+					ImGui::Checkbox("Skin Changer", &cfg::misc::skin::enabled);
+					ImGui::SetItemTooltip("Replaces active weapon skin client-side only");
+					ImGui::BeginDisabled(!cfg::misc::skin::enabled);
+					{
+						ImGui::InputInt("Target Weapon ID", &cfg::misc::skin::weapon_id);
+						ImGui::SetItemTooltip("Item def index of the weapon to reskin (e.g. 9 = AWP)");
+						ImGui::InputInt("Replacement Skin ID", &cfg::misc::skin::skin_id);
+						ImGui::SetItemTooltip("Item def index to write (e.g. 7 = AK-47 model on AWP slot)");
+					}
+					ImGui::EndDisabled();
+				}
 				else if (active_tab == Tab::SETTINGS)
 				{
 					ImGui::Text("Misc");
@@ -381,6 +461,36 @@ void Menu::RenderImpl() {
 
 					ImGui::Checkbox("Free CPU", &cfg::settings::free_cpu);
 					ImGui::SetItemTooltip("Let the CPU sleep to Free Resources\nNOTE: might cause performance issues in lower end computers!");
+
+					ImGui::Spacing();
+					ImGui::Text("Toggle Keybind");
+					ImGui::Separator();
+
+					static bool waiting_for_toggle_key = false;
+					if (waiting_for_toggle_key) {
+						ImGui::Button("Press any key...", ImVec2(-1, 0));
+						for (int i = 1; i < 256; i++) {
+							if (i == VK_LBUTTON || i == VK_RBUTTON || i == VK_MBUTTON) continue;
+							if (GetAsyncKeyState(i) & 0x8000) {
+								cfg::settings::toggle_key = i;
+								waiting_for_toggle_key = false;
+								Config::Write();
+								break;
+							}
+						}
+					} else {
+						char key_label[64];
+						UINT scanCode = MapVirtualKey(cfg::settings::toggle_key, MAPVK_VK_TO_VSC);
+						LONG lParam = (scanCode << 16);
+						if (GetKeyNameTextA(lParam, key_label, 64) == 0)
+							sprintf_s(key_label, sizeof(key_label), "0x%X", cfg::settings::toggle_key);
+						char btn_label[80];
+						sprintf_s(btn_label, sizeof(btn_label), "Enable/Disable: %s", key_label);
+						if (ImGui::Button(btn_label, ImVec2(-1, 0)))
+							waiting_for_toggle_key = true;
+						if (ImGui::IsItemHovered())
+							ImGui::SetTooltip("Click to rebind the enable/disable toggle key");
+					}
 
 					ImGui::Text("Notes");
 					ImGui::Separator();

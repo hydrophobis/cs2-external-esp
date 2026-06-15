@@ -40,12 +40,24 @@ inline DWORD csgoInput;
 		
 		constexpr std::ptrdiff_t m_pWeaponServices = 0x11E0; // CPlayer_WeaponServices*
 		constexpr std::ptrdiff_t m_hActiveWeapon = 0x60; // CHandle<C_BasePlayerWeapon> - CPlayer_WeaponServices
+		constexpr std::ptrdiff_t m_flNextAttack = 0xD0; // GameTime_t - CCSPlayer_WeaponServices (bolt/pump cycle delay)
 		constexpr std::ptrdiff_t m_AttributeManager = 0x1180; // C_AttributeContainer - C_EconEntity (parent of C_BasePlayerWeapon)
 		constexpr std::ptrdiff_t m_Item = 0x50; // C_EconItemView - C_AttributeContainer
 		constexpr std::ptrdiff_t m_iItemDefinitionIndex = 0x1BA; // uint16 - C_EconItemView
 		constexpr std::ptrdiff_t m_iClip1 = 0x16D8; // int32 - C_BasePlayerWeapon
 		constexpr std::ptrdiff_t m_bInReload = 0x17F4; // bool - C_CSWeaponBase
+
+			// C_CSWeaponBase
+			constexpr std::ptrdiff_t m_nNextPrimaryAttackTick = 0x16C8; // GameTick_t
+			constexpr std::ptrdiff_t m_fAccuracyPenalty = 0x17D0; // float32
+			constexpr std::ptrdiff_t m_iRecoilIndex = 0x17DC; // int32
+			constexpr std::ptrdiff_t m_nPostponeFireReadyTicks = 0x17EC; // GameTick_t - holds fire during bolt/pump animation
+			constexpr std::ptrdiff_t m_flPostponeFireReadyFrac = 0x17F0; // float32 - fractional component of above
+			constexpr std::ptrdiff_t m_flNextClientFireBulletTime = 0x1908; // float32 - client-side fire time gate
+
 		constexpr std::ptrdiff_t m_pObserverServices = 0x11F8; // CPlayer_ObserverServices*
+
+		constexpr std::ptrdiff_t m_fFlags = 0x3F8; // uint32 - FL_ONGROUND = (1 << 0)
 
     constexpr std::ptrdiff_t m_pAimPunchServices = 0x1490; // CCSPlayer_AimPunchServices*
     constexpr std::ptrdiff_t m_iShotsFired = 0x1C64; // int32
@@ -62,12 +74,19 @@ inline DWORD csgoInput;
 		constexpr std::ptrdiff_t m_isPlanted = 0x8; // unk
 		constexpr std::ptrdiff_t m_bC4Activated = 0x11A8; // bool
 		constexpr std::ptrdiff_t m_nBombSite = 0x1164; // int32
+		constexpr std::ptrdiff_t m_flC4Blow = 0x1190; // GameTime_t - detonation time
+		constexpr std::ptrdiff_t m_bBeingDefused = 0x119C; // bool
+		constexpr std::ptrdiff_t m_flDefuseLength = 0x11AC; // float32
+		constexpr std::ptrdiff_t m_flDefuseCountDown = 0x11B0; // GameTime_t - defuse completion time
+		constexpr std::ptrdiff_t m_bBombDefused = 0x11B4; // bool
 
 		constexpr std::ptrdiff_t m_vecAbsOrigin = 0xC8; // VectorWS - CGameSceneNode 
 	}
 
 	namespace input {
 		constexpr std::ptrdiff_t viewAngles = 0x4; // QAngle offset from csgoInput pointer
+		// csgoInput points to a CCSGOInput object; view angles are a Vec3 at +0x4
+		// Read: p->read<Vec3_t>(p->read<uintptr_t>(client.base + offsets::csgoInput) + viewAngles)
 	}
 
 	namespace bone {

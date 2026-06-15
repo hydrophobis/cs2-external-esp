@@ -110,6 +110,12 @@ void Aimbot::Thread() {
                     aimY += (rng_float() - 0.5f) * j;
                 }
 
+                if (cfg::aimbot::soft_aim) {
+                    float cap = cfg::aimbot::soft_aim_max_move;
+                    aimX = std::max(-cap, std::min(cap, aimX));
+                    aimY = std::max(-cap, std::min(cap, aimY));
+                }
+
                 aimX += aimbotRemainderX;
                 aimY += aimbotRemainderY;
                 aimbotRemainderX = 0.f;

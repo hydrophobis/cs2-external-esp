@@ -127,6 +127,21 @@ bool Config::ReadImpl() {
 		cfg::aimbot::jitter = data["aimbot"].value("jitter", 0.5f);
 		cfg::aimbot::velocity_comp = data["aimbot"].value("velocity_comp", false);
 		cfg::aimbot::velocity_comp_scale = data["aimbot"].value("velocity_comp_scale", 0.1f);
+		cfg::aimbot::soft_aim = data["aimbot"].value("soft_aim", false);
+		cfg::aimbot::soft_aim_max_move = data["aimbot"].value("soft_aim_max_move", 3.0f);
+
+		// misc
+		cfg::misc::bhop = data["misc"].value("bhop", false);
+		cfg::misc::anti_flash = data["misc"].value("anti_flash", false);
+		cfg::misc::triggerbot::enabled = data["misc"]["triggerbot"].value("enabled", false);
+		cfg::misc::triggerbot::hotkey = data["misc"]["triggerbot"].value("hotkey", VK_XBUTTON1);
+		cfg::misc::triggerbot::fov = data["misc"]["triggerbot"].value("fov", 2.0f);
+		cfg::misc::triggerbot::delay_ms = data["misc"]["triggerbot"].value("delay_ms", 50);
+		cfg::misc::strafe::helper = data["misc"]["strafe"].value("helper", false);
+		cfg::misc::strafe::autostrafe = data["misc"]["strafe"].value("autostrafe", false);
+		cfg::misc::skin::enabled = data["misc"]["skin"].value("enabled", false);
+		cfg::misc::skin::weapon_id = data["misc"]["skin"].value("weapon_id", (int)weapon_awp);
+		cfg::misc::skin::skin_id = data["misc"]["skin"].value("skin_id", 0);
 
 		// utils
 		//cfg::settings::console = data["utils"].value("console", true);
@@ -134,6 +149,7 @@ bool Config::ReadImpl() {
 		cfg::settings::streamproof = data["utils"].value("streamproof", false);
 		cfg::settings::vsync = data["utils"].value("vsync", true);
 		cfg::settings::free_cpu = data["utils"].value("free_cpu", true);
+		cfg::settings::toggle_key = data["utils"].value("toggle_key", VK_F1);
 		//cfg::settings::open_menu_key = data["utils"].value("open_menu_key", 0);
 	}
 	catch (const std::exception& e) {
@@ -246,6 +262,21 @@ bool Config::WriteImpl() {
 	data["aimbot"]["jitter"] = cfg::aimbot::jitter;
 	data["aimbot"]["velocity_comp"] = cfg::aimbot::velocity_comp;
 	data["aimbot"]["velocity_comp_scale"] = cfg::aimbot::velocity_comp_scale;
+	data["aimbot"]["soft_aim"] = cfg::aimbot::soft_aim;
+	data["aimbot"]["soft_aim_max_move"] = cfg::aimbot::soft_aim_max_move;
+
+	// misc
+	data["misc"]["bhop"] = cfg::misc::bhop;
+	data["misc"]["anti_flash"] = cfg::misc::anti_flash;
+	data["misc"]["triggerbot"]["enabled"] = cfg::misc::triggerbot::enabled;
+	data["misc"]["triggerbot"]["hotkey"] = cfg::misc::triggerbot::hotkey;
+	data["misc"]["triggerbot"]["fov"] = cfg::misc::triggerbot::fov;
+	data["misc"]["triggerbot"]["delay_ms"] = cfg::misc::triggerbot::delay_ms;
+	data["misc"]["strafe"]["helper"] = cfg::misc::strafe::helper;
+	data["misc"]["strafe"]["autostrafe"] = cfg::misc::strafe::autostrafe;
+	data["misc"]["skin"]["enabled"] = cfg::misc::skin::enabled;
+	data["misc"]["skin"]["weapon_id"] = cfg::misc::skin::weapon_id;
+	data["misc"]["skin"]["skin_id"] = cfg::misc::skin::skin_id;
 
 	// utils
 	//data["utils"]["console"] = cfg::settings::console;
@@ -253,6 +284,7 @@ bool Config::WriteImpl() {
 	data["utils"]["streamproof"] = cfg::settings::streamproof;
 	data["utils"]["vsync"] = cfg::settings::vsync;
 	data["utils"]["free_cpu"] = cfg::settings::free_cpu;
+	data["utils"]["toggle_key"] = cfg::settings::toggle_key;
 	//data["utils"]["open_menu_key"] = cfg::settings::open_menu_key;
 
 	f << std::setw(4) << data << std::endl;

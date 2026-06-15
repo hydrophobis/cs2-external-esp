@@ -1,4 +1,5 @@
 #pragma once
+#include "core/engine/types/Weapons.hpp"
 
 namespace cfg {
 	inline bool enabled = true;
@@ -98,28 +99,56 @@ namespace cfg {
 	}
 
 	namespace aimbot {
-    inline bool enabled = false;
-    inline float fov = 5.0f;
-    inline float smooth = 5.0f;
-    inline int hotkey = 0x12; // VK_MENU (Alt)
-    inline int bone = 7; // head
-    inline bool rcs = false;
-    inline float rcs_x = 2.0f;
-    inline float rcs_y = 2.0f;
+		inline bool enabled = false;
+		inline float fov = 5.0f;
+		inline float smooth = 5.0f;
+		inline int hotkey = 0x12; // VK_MENU (Alt)
+		inline int bone = 7; // head
+		inline bool rcs = false;
+		inline float rcs_x = 2.0f;
+		inline float rcs_y = 2.0f;
 
-    inline bool humanize = false;
-    inline float smooth_variance = 0.3f;
-    inline float jitter = 0.5f;
+		inline bool humanize = false;
+		inline float smooth_variance = 0.3f;
+		inline float jitter = 0.5f;
 
-    inline bool velocity_comp = false;
-    inline float velocity_comp_scale = 0.1f;
-    }
+		inline bool velocity_comp = false;
+		inline float velocity_comp_scale = 0.1f;
+
+		// Soft aim: only nudge when crosshair is already close; cap move per tick
+		inline bool soft_aim = false;
+		inline float soft_aim_max_move = 3.0f; // max pixels moved per tick
+	}
+
+	namespace misc {
+		inline bool bhop = false;
+		inline bool anti_flash = false;
+
+		namespace triggerbot {
+			inline bool enabled = false;
+			inline int hotkey = VK_XBUTTON1; // Mouse4
+			inline float fov = 2.0f;         // screen-space radius in pixels to trigger
+			inline int delay_ms = 50;        // ms delay after target detected before clicking
+		}
+
+		namespace strafe {
+			inline bool helper = false;  // corrects A/D key to the side that gains speed
+			inline bool autostrafe = false; // full auto-strafe while in air
+		}
+
+		namespace skin {
+			inline bool enabled = false;
+			inline int weapon_id = weapon_awp; // weapon to reskin
+			inline int skin_id = 0;            // item definition index to replace with
+		}
+	}
 
 namespace settings {
 		inline bool watermark = true;
 		inline bool streamproof = false;
 		inline bool vsync = false;
 		inline bool free_cpu = true;
+		inline int toggle_key = VK_F1; // hotkey to toggle cfg::enabled
 	}
 
 

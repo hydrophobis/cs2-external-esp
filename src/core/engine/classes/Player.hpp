@@ -39,6 +39,8 @@ public:
     uint64_t steam_id{};
 
     Weapon weapon;
+    uintptr_t weapon_ptr = 0; // resolved weapon entity address
+    uintptr_t pawn_addr = 0; // pawn entity address
     int32_t ammo;
     bool is_reloading;
 

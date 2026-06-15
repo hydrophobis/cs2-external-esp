@@ -31,6 +31,7 @@ bool Weapon::Update() {
     this->icon = ToIcon();
     this->ammo = p->read<int32_t>(weapon_ptr + offsets::pawn::m_iClip1);
     this->is_reloading = p->read<bool>(weapon_ptr + offsets::pawn::m_bInReload);
+	this->entity_ptr = weapon_ptr;
 
 	return true;
 }

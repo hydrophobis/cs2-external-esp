@@ -3,6 +3,8 @@
 #include "core/offsets/Dumper.hpp"
 #include "core/engine/cache/Cache.hpp"
 #include "core/engine/features/Aimbot.hpp"
+#include "core/engine/features/Bhop.hpp"
+#include "core/engine/features/Misc.hpp"
 
 bool Engine::Init() {
     return GetInstance().InitImpl();
@@ -47,6 +49,8 @@ bool Engine::InitImpl() {
 #endif
 
     Aimbot::Init();
+    Bhop::Init();
+    Misc::Init();
 
     std::thread(&Engine::Thread, this).detach();
 
@@ -55,11 +59,15 @@ bool Engine::InitImpl() {
 }
 
 void Engine::Thread() {
-    // TODO: Check build number 
-    // uintptr_t number = process->read<uintptr_t>(base_engine.base + offsets::buildNumber);
+    bool lastToggleDown = false;
 
     while (true) {
         auto start = steady_clock::now();
+
+        bool toggleDown = (GetAsyncKeyState(cfg::settings::toggle_key) & 0x8000) != 0;
+        if (toggleDown && !lastToggleDown)
+            cfg::enabled = !cfg::enabled;
+        lastToggleDown = toggleDown;
 
         Cache::Refresh();
 

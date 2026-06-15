@@ -51,6 +51,7 @@
     <ClCompile Include="core\engine\features\Aimbot.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    
     <ClCompile Include="gui\renderer\window\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -164,6 +165,7 @@
     <ClInclude Include="core\engine\features\Aimbot.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    
     <ClInclude Include="gui\renderer\window\Window.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

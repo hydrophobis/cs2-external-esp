@@ -16,6 +16,7 @@ public:
 	const char* icon;
 	int32_t ammo;
 	bool is_reloading;
+	uintptr_t entity_ptr = 0;
 
 private:
 	const char* ToString() const;

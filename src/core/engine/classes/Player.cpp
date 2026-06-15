@@ -59,6 +59,7 @@ bool Player::GetPawn() {
 		return false;
 
 	this->pawn = p->read<uintptr_t>(entity_pawn_list_entry + 0x70 * (entity_pawn_address & 0x1FF)); /*0x78*/
+	this->pawn_addr = this->pawn;
 
 	return this->pawn != 0;
 }
@@ -184,6 +185,7 @@ bool Player::UpdateWeapon() {
 	this->weapon = weapon;
 	this->ammo = weapon.ammo;
 	this->is_reloading = weapon.is_reloading;
+	this->weapon_ptr = weapon.entity_ptr;
 
 	return true;
 }
