@@ -41,5 +41,6 @@ private:
     void RenderPlayerTracers(Player source, Player player, bool mate = false);
 
 	void RenderCrosshair(Player local);
+    void RenderAimbotFOV();
     void RenderBomb(Player local, Bomb bomb);
 };

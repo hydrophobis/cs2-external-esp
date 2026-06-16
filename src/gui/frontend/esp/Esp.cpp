@@ -1,5 +1,6 @@
 #include "Esp.hpp"
 
+#include <cmath>
 #include "gui/renderer/Renderer.hpp"
 #include "assets/fonts/WeaponIcons.h"
 #include "assets/fonts/Icons.h"
@@ -92,6 +93,7 @@ void Esp::RenderImpl() {
 	}
 
 	RenderCrosshair(local);
+	RenderAimbotFOV();
 	ImGui::PopFont();
 }
 
@@ -516,4 +518,20 @@ void Esp::RenderBomb(Player local, Bomb bomb) {
 		IM_COL32(255, 255, 255, 255),
 		bomb_string.data()
 	);
+}
+void Esp::RenderAimbotFOV() {
+	if (!cfg::aimbot::draw_fov || !cfg::aimbot::enabled)
+		return;
+
+	constexpr float DEG_TO_RAD = 3.14159265f / 180.f;
+	constexpr float STATIC_FOV = 90.f;  // CS2 default horizontal FOV
+
+	ImVec2 center(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f);
+	float halfWindowWidth = io.DisplaySize.x * 0.5f;
+
+	float aimFovTan = tanf(cfg::aimbot::fov * DEG_TO_RAD * 0.5f);
+	float staticFovTan = tanf(STATIC_FOV * DEG_TO_RAD * 0.5f);
+	float radius = (aimFovTan / staticFovTan) * halfWindowWidth;
+
+	d->AddCircle(center, radius, ImColor(cfg::aimbot::fov_color), 64, 1.5f);
 }

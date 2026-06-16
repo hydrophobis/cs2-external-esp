@@ -120,8 +120,11 @@ bool Config::ReadImpl() {
 		cfg::aimbot::hotkey = data["aimbot"].value("hotkey", 0x12);
 		cfg::aimbot::bone = data["aimbot"].value("bone", 7);
 		cfg::aimbot::rcs = data["aimbot"].value("rcs", false);
-		cfg::aimbot::rcs_x = data["aimbot"].value("rcs_x", 2.0f);
-		cfg::aimbot::rcs_y = data["aimbot"].value("rcs_y", 2.0f);
+		cfg::aimbot::rcs_x = data["aimbot"].value("rcs_x", 1.4f);
+		cfg::aimbot::rcs_y = data["aimbot"].value("rcs_y", 1.4f);
+		cfg::aimbot::sensitivity = data["aimbot"].value("sensitivity", 2.0f);
+		cfg::aimbot::draw_fov = data["aimbot"].value("draw_fov", false);
+		cfg::aimbot::fov_color = JsonToColor(data["aimbot"], "fov_color", { 1.f, 1.f, 1.f, 0.5f });
 		cfg::aimbot::humanize = data["aimbot"].value("humanize", false);
 		cfg::aimbot::smooth_variance = data["aimbot"].value("smooth_variance", 0.3f);
 		cfg::aimbot::jitter = data["aimbot"].value("jitter", 0.5f);
@@ -257,6 +260,9 @@ bool Config::WriteImpl() {
 	data["aimbot"]["rcs"] = cfg::aimbot::rcs;
 	data["aimbot"]["rcs_x"] = cfg::aimbot::rcs_x;
 	data["aimbot"]["rcs_y"] = cfg::aimbot::rcs_y;
+		data["aimbot"]["sensitivity"] = cfg::aimbot::sensitivity;
+		data["aimbot"]["draw_fov"] = cfg::aimbot::draw_fov;
+		ColorToJson(data["aimbot"], "fov_color", cfg::aimbot::fov_color);
 	data["aimbot"]["humanize"] = cfg::aimbot::humanize;
 	data["aimbot"]["smooth_variance"] = cfg::aimbot::smooth_variance;
 	data["aimbot"]["jitter"] = cfg::aimbot::jitter;

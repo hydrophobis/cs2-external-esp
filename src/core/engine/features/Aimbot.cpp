@@ -85,13 +85,13 @@ void Aimbot::Thread() {
             if (bestTarget) {
                 hasTarget = true;
                 float smooth = cfg::aimbot::smooth > 0.1f ? cfg::aimbot::smooth : 1.0f;
-                // Offset target by current punch
+                // Offset target by current punch (DragonBurn-style sensitivity scaling)
                 if (cfg::aimbot::rcs && snapshot.local.shotsFired > 0) {
                     Vec2_t punch = snapshot.local.aimPunch;
-                    float rcsScale = -1.f; // no idea why this needs to be negative but eh
-                    float pixelScale = 15.0f;
-                    bestTargetPos.x -= punch.y * rcsScale * pixelScale;
-                    bestTargetPos.y += punch.x * rcsScale * pixelScale;
+                    float sens = cfg::aimbot::sensitivity;
+                    float sensScale = 1.f / (sens * 0.011f);
+                    bestTargetPos.x -= punch.y * cfg::aimbot::rcs_x * sensScale;
+                    bestTargetPos.y += punch.x * cfg::aimbot::rcs_y * sensScale;
                 }
 
                 // Humanize: randomize smooth and add jitter per tick
@@ -138,20 +138,27 @@ void Aimbot::Thread() {
                 rcsRemainderX = 0.f;
                 rcsRemainderY = 0.f;
             } else {
-                Vec2_t punch = local.aimPunch;
-                Vec2_t delta = { punch.x - oldPunch.x, punch.y - oldPunch.y };
+                // DragonBurn-style: only apply RCS while actively firing (LMB held)
+                if (GetAsyncKeyState(VK_LBUTTON) & 0x8000) {
+                    Vec2_t punch = local.aimPunch;
+                    Vec2_t delta = { punch.x - oldPunch.x, punch.y - oldPunch.y };
 
-                float rcsScale = 2.0f;
-                float pixelScale = 15.0f;
+                    float sens = cfg::aimbot::sensitivity;
+                    float sensScale = 1.f / (sens * 0.011f);
 
-                float rcsX = (delta.y) * rcsScale * pixelScale + rcsRemainderX;
-                float rcsY = -(delta.x) * rcsScale * pixelScale + rcsRemainderY;
-                rcsRemainderX = 0.f;
-                rcsRemainderY = 0.f;
-                totalMoveX += rcsX;
-                totalMoveY += rcsY;
+                    float rcsX = delta.y * cfg::aimbot::rcs_x * sensScale + rcsRemainderX;
+                    float rcsY = -delta.x * cfg::aimbot::rcs_y * sensScale + rcsRemainderY;
+                    rcsRemainderX = 0.f;
+                    rcsRemainderY = 0.f;
+                    totalMoveX += rcsX;
+                    totalMoveY += rcsY;
 
-                oldPunch = local.aimPunch;
+                    oldPunch = local.aimPunch;
+                } else {
+                    oldPunch = { 0.f, 0.f };
+                    rcsRemainderX = 0.f;
+                    rcsRemainderY = 0.f;
+                }
             }
         } else if (!cfg::aimbot::rcs) {
             oldPunch = { 0.f, 0.f };

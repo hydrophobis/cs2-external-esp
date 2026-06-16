@@ -242,6 +242,9 @@ void Menu::RenderImpl() {
 					ImGui::BeginDisabled(!cfg::aimbot::enabled);
 					{
 						ImGui::SliderFloat("FOV", &cfg::aimbot::fov, 1.0f, 180.0f, "%.1f");
+						ImGui::Checkbox("Draw FOV", &cfg::aimbot::draw_fov);
+						ImGui::SameLine();
+						ImGui::ColorEdit4("FOV Color", cfg::aimbot::fov_color.data(), color_flags);
 						ImGui::SliderFloat("Smoothing", &cfg::aimbot::smooth, 1.0f, 20.0f, "%.1f");
 
 						// Bone selector
@@ -309,6 +312,7 @@ void Menu::RenderImpl() {
 					ImGui::Checkbox("Enable RCS", &cfg::aimbot::rcs);
 					ImGui::BeginDisabled(!cfg::aimbot::rcs);
 					{
+						ImGui::SliderFloat("Sensitivity", &cfg::aimbot::sensitivity, 0.1f, 10.0f, "%.2f");
 						ImGui::SliderFloat("RCS X", &cfg::aimbot::rcs_x, 0.0f, 4.0f, "%.2f");
 						ImGui::SliderFloat("RCS Y", &cfg::aimbot::rcs_y, 0.0f, 4.0f, "%.2f");
 					}
