@@ -41,7 +41,8 @@ void Aimbot::Thread() {
 
         // Aimbot
         bool aimKeyDown = (GetAsyncKeyState(cfg::aimbot::hotkey) & 0x8000) != 0;
-        if (cfg::aimbot::enabled && aimKeyDown) {
+        bool aimActive = cfg::aimbot::always_on ? !aimKeyDown : aimKeyDown;
+        if (cfg::aimbot::enabled && aimActive) {
             Player* bestTarget = nullptr;
             float bestDist = cfg::aimbot::fov * 10.f;
             Vec2_t bestTargetPos = { 0, 0 };
@@ -90,14 +91,6 @@ void Aimbot::Thread() {
             if (bestTarget) {
                 hasTarget = true;
                 float smooth = cfg::aimbot::smooth > 0.1f ? cfg::aimbot::smooth : 1.0f;
-                // Offset target by current punch (DragonBurn-style sensitivity scaling)
-                if (cfg::aimbot::rcs && snapshot.local.shotsFired > 0) {
-                    Vec2_t punch = snapshot.local.aimPunch;
-                    float sens = cfg::aimbot::sensitivity;
-                    float sensScale = 1.f / (sens * 0.011f);
-                    bestTargetPos.x -= punch.y * cfg::aimbot::rcs_x * sensScale;
-                    bestTargetPos.y += punch.x * cfg::aimbot::rcs_y * sensScale;
-                }
 
                 // Humanize: randomize smooth and add jitter per tick
                 float effectiveSmooth = smooth;
@@ -135,37 +128,34 @@ void Aimbot::Thread() {
             aimbotRemainderY = 0.f;
         }
 
-        if (cfg::aimbot::rcs && !hasTarget) {
+        if (cfg::aimbot::rcs) {
             auto& local = snapshot.local;
 
             if (local.shotsFired == 0) {
                 oldPunch = { 0.f, 0.f };
                 rcsRemainderX = 0.f;
                 rcsRemainderY = 0.f;
+            } else if (GetAsyncKeyState(VK_LBUTTON) & 0x8000) {
+                Vec2_t punch = local.aimPunch;
+                Vec2_t delta = { punch.x - oldPunch.x, punch.y - oldPunch.y };
+
+                float sens = cfg::aimbot::sensitivity;
+                float sensScale = 1.f / (sens * 0.011f);
+
+                float rcsX = delta.y * cfg::aimbot::rcs_x * sensScale + rcsRemainderX;
+                float rcsY = -delta.x * cfg::aimbot::rcs_y * sensScale + rcsRemainderY;
+                rcsRemainderX = 0.f;
+                rcsRemainderY = 0.f;
+                totalMoveX += rcsX;
+                totalMoveY += rcsY;
+
+                oldPunch = local.aimPunch;
             } else {
-                // DragonBurn-style: only apply RCS while actively firing (LMB held)
-                if (GetAsyncKeyState(VK_LBUTTON) & 0x8000) {
-                    Vec2_t punch = local.aimPunch;
-                    Vec2_t delta = { punch.x - oldPunch.x, punch.y - oldPunch.y };
-
-                    float sens = cfg::aimbot::sensitivity;
-                    float sensScale = 1.f / (sens * 0.011f);
-
-                    float rcsX = delta.y * cfg::aimbot::rcs_x * sensScale + rcsRemainderX;
-                    float rcsY = -delta.x * cfg::aimbot::rcs_y * sensScale + rcsRemainderY;
-                    rcsRemainderX = 0.f;
-                    rcsRemainderY = 0.f;
-                    totalMoveX += rcsX;
-                    totalMoveY += rcsY;
-
-                    oldPunch = local.aimPunch;
-                } else {
-                    oldPunch = { 0.f, 0.f };
-                    rcsRemainderX = 0.f;
-                    rcsRemainderY = 0.f;
-                }
+                oldPunch = { 0.f, 0.f };
+                rcsRemainderX = 0.f;
+                rcsRemainderY = 0.f;
             }
-        } else if (!cfg::aimbot::rcs) {
+        } else {
             oldPunch = { 0.f, 0.f };
             rcsRemainderX = 0.f;
             rcsRemainderY = 0.f;
@@ -176,10 +166,12 @@ void Aimbot::Thread() {
 
         float fracX = totalMoveX - static_cast<float>(moveX);
         float fracY = totalMoveY - static_cast<float>(moveY);
+
         if (hasTarget) {
             aimbotRemainderX = fracX;
             aimbotRemainderY = fracY;
-        } else if (cfg::aimbot::rcs && snapshot.local.shotsFired > 0) {
+        }
+        if (cfg::aimbot::rcs && snapshot.local.shotsFired > 0) {
             rcsRemainderX = fracX;
             rcsRemainderY = fracY;
         }

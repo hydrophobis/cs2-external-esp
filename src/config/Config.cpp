@@ -137,6 +137,7 @@ bool Config::ReadImpl() {
 		cfg::aimbot::soft_aim_max_move = data["aimbot"].value("soft_aim_max_move", 3.0f);
 		cfg::aimbot::multi_bone = data["aimbot"].value("multi_bone", false);
 		cfg::aimbot::fov_zoom_scale = data["aimbot"].value("fov_zoom_scale", true);
+		cfg::aimbot::always_on = data["aimbot"].value("always_on", false);
 		if (data["aimbot"].contains("bone_priority") && data["aimbot"]["bone_priority"].is_array()) {
 			cfg::aimbot::bone_priority.clear();
 			for (auto& b : data["aimbot"]["bone_priority"])
@@ -151,6 +152,9 @@ bool Config::ReadImpl() {
 		cfg::misc::triggerbot::hotkey = data["misc"]["triggerbot"].value("hotkey", VK_XBUTTON1);
 		cfg::misc::triggerbot::fov = data["misc"]["triggerbot"].value("fov", 2.0f);
 		cfg::misc::triggerbot::delay_ms = data["misc"]["triggerbot"].value("delay_ms", 50);
+		cfg::misc::triggerbot::draw = data["misc"]["triggerbot"].value("draw", false);
+		cfg::misc::triggerbot::draw_color = JsonToColor(data["misc"]["triggerbot"], "draw_color", { 1.f, 1.f, 0.f, 0.5f });
+		cfg::misc::triggerbot::always_on = data["misc"]["triggerbot"].value("always_on", false);
 		cfg::misc::strafe::helper = data["misc"]["strafe"].value("helper", false);
 		cfg::misc::strafe::autostrafe = data["misc"]["strafe"].value("autostrafe", false);
 		cfg::misc::skin::enabled = data["misc"]["skin"].value("enabled", false);
@@ -165,6 +169,8 @@ bool Config::ReadImpl() {
 		cfg::misc::auto_knife::enabled = data["misc"]["auto_knife"].value("enabled", false);
 		cfg::misc::auto_knife::range = data["misc"]["auto_knife"].value("range", 80.f);
 		cfg::misc::stats::enabled = data["misc"]["stats"].value("enabled", false);
+		cfg::misc::auto_queue::enabled = data["misc"]["auto_queue"].value("enabled", false);
+		cfg::misc::auto_queue::accept_match = data["misc"]["auto_queue"].value("accept_match", true);
 
 		cfg::settings::watermark = data["utils"].value("watermark", true);
 		cfg::settings::streamproof = data["utils"].value("streamproof", false);
@@ -272,6 +278,7 @@ bool Config::WriteImpl() {
 	data["aimbot"]["soft_aim_max_move"] = cfg::aimbot::soft_aim_max_move;
 	data["aimbot"]["multi_bone"] = cfg::aimbot::multi_bone;
 	data["aimbot"]["fov_zoom_scale"] = cfg::aimbot::fov_zoom_scale;
+	data["aimbot"]["always_on"] = cfg::aimbot::always_on;
 	data["aimbot"]["bone_priority"] = cfg::aimbot::bone_priority;
 
 	data["misc"]["bhop"] = cfg::misc::bhop;
@@ -282,6 +289,9 @@ bool Config::WriteImpl() {
 	data["misc"]["triggerbot"]["hotkey"] = cfg::misc::triggerbot::hotkey;
 	data["misc"]["triggerbot"]["fov"] = cfg::misc::triggerbot::fov;
 	data["misc"]["triggerbot"]["delay_ms"] = cfg::misc::triggerbot::delay_ms;
+	data["misc"]["triggerbot"]["draw"] = cfg::misc::triggerbot::draw;
+	ColorToJson(data["misc"]["triggerbot"], "draw_color", cfg::misc::triggerbot::draw_color);
+	data["misc"]["triggerbot"]["always_on"] = cfg::misc::triggerbot::always_on;
 	data["misc"]["strafe"]["helper"] = cfg::misc::strafe::helper;
 	data["misc"]["strafe"]["autostrafe"] = cfg::misc::strafe::autostrafe;
 	data["misc"]["skin"]["enabled"] = cfg::misc::skin::enabled;
@@ -296,6 +306,8 @@ bool Config::WriteImpl() {
 	data["misc"]["auto_knife"]["enabled"] = cfg::misc::auto_knife::enabled;
 	data["misc"]["auto_knife"]["range"] = cfg::misc::auto_knife::range;
 	data["misc"]["stats"]["enabled"] = cfg::misc::stats::enabled;
+	data["misc"]["auto_queue"]["enabled"] = cfg::misc::auto_queue::enabled;
+	data["misc"]["auto_queue"]["accept_match"] = cfg::misc::auto_queue::accept_match;
 
 	data["utils"]["watermark"] = cfg::settings::watermark;
 	data["utils"]["streamproof"] = cfg::settings::streamproof;

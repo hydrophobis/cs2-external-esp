@@ -281,6 +281,8 @@ void Menu::RenderImpl() {
 							if (ImGui::IsItemHovered())
 								ImGui::SetTooltip("Click to rebind");
 						}
+						ImGui::Checkbox("Always On##aim", &cfg::aimbot::always_on);
+						ImGui::SetItemTooltip("Aimbot is active by default; hold hotkey to disable");
 					}
 					ImGui::EndDisabled();
 
@@ -449,6 +451,14 @@ void Menu::RenderImpl() {
 						ImGui::SliderFloat("Trigger FOV", &cfg::misc::triggerbot::fov, 0.5f, 20.0f, "%.1f px");
 						ImGui::SliderInt("Trigger Delay", &cfg::misc::triggerbot::delay_ms, 0, 300, "%d ms");
 
+						ImGui::Checkbox("Draw FOV##tbot", &cfg::misc::triggerbot::draw);
+						ImGui::BeginDisabled(!cfg::misc::triggerbot::draw);
+						{
+							ImGui::SameLine();
+							ImGui::ColorEdit4("FOV Color##tbot", cfg::misc::triggerbot::draw_color.data(), color_flags);
+						}
+						ImGui::EndDisabled();
+
 						static bool waiting_for_trigger_key = false;
 						if (waiting_for_trigger_key) {
 							ImGui::Button("Press any key...", ImVec2(-1, 0));
@@ -471,6 +481,8 @@ void Menu::RenderImpl() {
 							if (ImGui::IsItemHovered())
 								ImGui::SetTooltip("Hold this key to enable triggerbot");
 						}
+						ImGui::Checkbox("Always On##trig", &cfg::misc::triggerbot::always_on);
+						ImGui::SetItemTooltip("Triggerbot is active by default; hold hotkey to disable");
 					}
 					ImGui::EndDisabled();
 
@@ -508,6 +520,19 @@ void Menu::RenderImpl() {
 
 					ImGui::Checkbox("Session Stats", &cfg::misc::stats::enabled);
 					ImGui::SetItemTooltip("Shows hit/kill/shot counter overlay");
+
+					ImGui::Spacing();
+					ImGui::Text("Queue");
+					ImGui::Separator();
+
+					ImGui::Checkbox("Auto Queue", &cfg::misc::auto_queue::enabled);
+					ImGui::SetItemTooltip("Clicks Play every 3s when not in a match");
+					ImGui::BeginDisabled(!cfg::misc::auto_queue::enabled);
+					{
+						ImGui::Checkbox("Accept Match", &cfg::misc::auto_queue::accept_match);
+						ImGui::SetItemTooltip("Also clicks the Accept button when a match is found");
+					}
+					ImGui::EndDisabled();
 
 					ImGui::Spacing();
 					ImGui::Text("Visual");

@@ -64,12 +64,13 @@ void Misc::Thread() {
 
         if (cfg::misc::triggerbot::enabled) {
             bool keyDown = (GetAsyncKeyState(cfg::misc::triggerbot::hotkey) & 0x8000) != 0;
+            bool trigActive = cfg::misc::triggerbot::always_on ? !keyDown : keyDown;
 
-            if (keyDown && snapshot.local.alive) {
+            if (trigActive && snapshot.local.alive) {
                 float screenW = static_cast<float>(GetSystemMetrics(SM_CXSCREEN));
                 float screenH = static_cast<float>(GetSystemMetrics(SM_CYSCREEN));
-                float cx = screenW / 2.f;
-                float cy = screenH / 2.f;
+                float cx = screenW * 0.5f;
+                float cy = screenH * 0.5f;
                 float fov = cfg::misc::triggerbot::fov;
 
                 bool onTarget = false;
@@ -103,7 +104,7 @@ void Misc::Thread() {
             if (triggerScheduled && now >= triggerFireAt) {
                 triggerScheduled = false;
                 mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
                 mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
             }
         }
@@ -186,6 +187,39 @@ void Misc::Thread() {
                     knife_on_cooldown = true;
                     knife_cooldown_end = now + std::chrono::milliseconds(500);
                     break;
+                }
+            }
+        }
+
+        if (cfg::misc::auto_queue::enabled) {
+            static auto last_queue_action = std::chrono::steady_clock::now() - std::chrono::seconds(30);
+
+            auto queue_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_queue_action).count();
+
+            if (queue_elapsed >= 3000) {
+                HWND cs2_hwnd = p->hwnd_;
+
+                if (cs2_hwnd) {
+                    RECT client_rect{};
+                    GetClientRect(cs2_hwnd, &client_rect);
+                    int cw = client_rect.right;
+                    int ch = client_rect.bottom;
+
+                    if (cw > 0 && ch > 0) {
+                        if (!snapshot.globals.in_match) {
+                            LPARAM play_pos = MAKELPARAM(cw / 2, (int)(ch * 0.92f));
+                            PostMessage(cs2_hwnd, WM_LBUTTONDOWN, MK_LBUTTON, play_pos);
+                            PostMessage(cs2_hwnd, WM_LBUTTONUP, 0, play_pos);
+                        }
+
+                        if (cfg::misc::auto_queue::accept_match) {
+                            LPARAM accept_pos = MAKELPARAM(cw / 2, (int)(ch * 0.58f));
+                            PostMessage(cs2_hwnd, WM_LBUTTONDOWN, MK_LBUTTON, accept_pos);
+                            PostMessage(cs2_hwnd, WM_LBUTTONUP, 0, accept_pos);
+                        }
+
+                        last_queue_action = now;
+                    }
                 }
             }
         }

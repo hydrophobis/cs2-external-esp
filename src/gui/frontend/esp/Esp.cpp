@@ -97,6 +97,7 @@ void Esp::RenderImpl() {
 
 	RenderCrosshair(local);
 	RenderAimbotFOV();
+	RenderTriggerbotFOV();
 	RenderHitMarkers();
 	ImGui::PopFont();
 }
@@ -547,6 +548,14 @@ void Esp::RenderAimbotFOV() {
 	float radius = (aimFovTan / staticFovTan) * halfWindowWidth;
 
 	d->AddCircle(center, radius, ImColor(cfg::aimbot::fov_color), 64, 1.5f);
+}
+
+void Esp::RenderTriggerbotFOV() {
+	if (!cfg::misc::triggerbot::enabled || !cfg::misc::triggerbot::draw)
+		return;
+
+	ImVec2 center(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f);
+	d->AddCircle(center, cfg::misc::triggerbot::fov, ImColor(cfg::misc::triggerbot::draw_color), 32, 1.0f);
 }
 
 void Esp::RenderHitMarkers() {

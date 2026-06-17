@@ -128,6 +128,7 @@ namespace cfg {
 		inline std::vector<int> bone_priority{ 7, 6, 23 };
 
 		inline bool fov_zoom_scale = true;
+		inline bool always_on = false;
 	}
 
 	namespace misc {
@@ -141,6 +142,9 @@ namespace cfg {
 			inline int hotkey = VK_XBUTTON1;
 			inline float fov = 2.0f;
 			inline int delay_ms = 50;
+			inline bool draw = false;
+			inline color_t draw_color{ 1.f, 1.f, 0.f, 0.5f };
+			inline bool always_on = false;
 		}
 
 		namespace strafe {
@@ -179,6 +183,11 @@ namespace cfg {
 			inline int hits = 0;
 			inline int kills = 0;
 			inline int shots_fired = 0;
+		}
+
+		namespace auto_queue {
+			inline bool enabled = false;
+			inline bool accept_match = true;
 		}
 	}
 

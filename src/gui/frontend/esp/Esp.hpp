@@ -43,6 +43,7 @@ private:
 
 	void RenderCrosshair(Player local);
     void RenderAimbotFOV();
+    void RenderTriggerbotFOV();
     void RenderHitMarkers();
     void RenderBomb(Player local, Bomb bomb);
 };
