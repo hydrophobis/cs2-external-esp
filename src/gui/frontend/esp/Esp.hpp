@@ -1,6 +1,8 @@
 #pragma once
 
 #include "core/engine/cache/Cache.hpp"
+#include <chrono>
+#include <mutex>
 
 class Esp {
 public:
@@ -19,7 +21,6 @@ private:
     ImFont* font_merged_icons;
     ImDrawList* d;
 
-    // Temporary storage for ease
     view_matrix_t matrix;
 private:
     Esp() {};
@@ -42,5 +43,6 @@ private:
 
 	void RenderCrosshair(Player local);
     void RenderAimbotFOV();
+    void RenderHitMarkers();
     void RenderBomb(Player local, Bomb bomb);
 };

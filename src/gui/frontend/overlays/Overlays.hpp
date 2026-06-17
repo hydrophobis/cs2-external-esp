@@ -38,4 +38,5 @@ private:
     void RenderSpeedChart();
     void RenderDebugWindow();
     void RenderSpectatorList();
+    void RenderSessionStats();
 };

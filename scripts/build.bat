@@ -35,7 +35,7 @@ set DEFINES=-D_CONSOLE -DIMGUI_DEFINE_MATH_OPERATORS -DCURL_STATICLIB -D_WIN32_W
 set LIBS=src/external/lib/libcurl.lib ^
          src/external/lib/zlib.lib ^
          -ld3d11 -ldxgi -ld3dcompiler_47 -ldwmapi -lgdi32 -luser32 -limm32 -lole32 ^
-         -lws2_32 -lwldap32 -lcrypt32 -lnormaliz -ladvapi32 -lbcrypt
+         -lws2_32 -lwldap32 -lcrypt32 -lnormaliz -ladvapi32 -lbcrypt -lwinmm
 
 set SRCS=scripts\msvc\compatibility.cpp ^
          src/common.cpp ^
@@ -48,6 +48,9 @@ set SRCS=scripts\msvc\compatibility.cpp ^
          src/core/engine/classes/Player.cpp ^
          src/core/engine/classes/Weapon.cpp ^
          src/core/engine/classes/ObserverServices.cpp ^
+         src/core/engine/features/Aimbot.cpp ^
+         src/core/engine/features/Bhop.cpp ^
+         src/core/engine/features/Misc.cpp ^
          src/core/logger/LogHelper.cpp ^
          src/core/memory/Memory.cpp ^
          src/core/offsets/Dumper.cpp ^

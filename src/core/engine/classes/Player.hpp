@@ -46,6 +46,7 @@ public:
 
     std::vector<bone_pos> bone_list;
 
+    int zoom_level = 0;
     int pawn_controller_addr;
     ObserverServices observer_services;
 private:

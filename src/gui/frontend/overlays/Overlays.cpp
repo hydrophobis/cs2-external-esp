@@ -54,6 +54,7 @@ void Overlays::RenderImpl() {
         RenderSpectatorList();
         RenderSpeedChart();
         RenderRadar();
+        RenderSessionStats();
     }
     ImGui::PopFont();
 }
@@ -540,4 +541,34 @@ void Overlays::RenderRadar() {
     d->AddCircle(ImVec2(cx, cy), 5.f, IM_COL32(0, 0, 0, 180));
 
     d->AddText(ImVec2(pos.x + 6.f, pos.y + 4.f), IM_COL32(180, 180, 180, 200), "Radar");
+}
+
+void Overlays::RenderSessionStats() {
+    if (!cfg::misc::stats::enabled)
+        return;
+
+    const bool is_menu_open = Renderer::IsOpen();
+
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize;
+    ImGui::SetNextWindowPos(ImVec2(10.f, 300.f), ImGuiCond_FirstUseEver);
+
+    if (!ImGui::Begin("Stats", nullptr, flags)) {
+        ImGui::End();
+        return;
+    }
+
+    ImGui::Text("Hits:   %d", cfg::misc::stats::hits);
+    ImGui::Text("Kills:  %d", cfg::misc::stats::kills);
+    ImGui::Text("Shots:  %d", cfg::misc::stats::shots_fired);
+
+    if (is_menu_open) {
+        ImGui::Separator();
+        if (ImGui::Button("Reset")) {
+            cfg::misc::stats::hits = 0;
+            cfg::misc::stats::kills = 0;
+            cfg::misc::stats::shots_fired = 0;
+        }
+    }
+
+    ImGui::End();
 }

@@ -1,4 +1,6 @@
 #pragma once
+#include <vector>
+#include <string>
 #include "core/engine/types/Weapons.hpp"
 
 namespace cfg {
@@ -102,8 +104,8 @@ namespace cfg {
 		inline bool enabled = false;
 		inline float fov = 5.0f;
 		inline float smooth = 5.0f;
-		inline int hotkey = 0x12; // VK_MENU (Alt)
-		inline int bone = 7; // head
+		inline int hotkey = 0x12;
+		inline int bone = 7;
 		inline bool rcs = false;
 		inline float rcs_x = 1.4f;
 		inline float rcs_y = 1.4f;
@@ -119,31 +121,64 @@ namespace cfg {
 		inline bool velocity_comp = false;
 		inline float velocity_comp_scale = 0.1f;
 
-		// Soft aim: only nudge when crosshair is already close; cap move per tick
 		inline bool soft_aim = false;
-		inline float soft_aim_max_move = 3.0f; // max pixels moved per tick
+		inline float soft_aim_max_move = 3.0f;
+
+		inline bool multi_bone = false;
+		inline std::vector<int> bone_priority{ 7, 6, 23 };
+
+		inline bool fov_zoom_scale = true;
 	}
 
 	namespace misc {
 		inline bool bhop = false;
 		inline bool anti_flash = false;
+		inline bool anti_afk = false;
+		inline int anti_afk_interval_s = 60;
 
 		namespace triggerbot {
 			inline bool enabled = false;
-			inline int hotkey = VK_XBUTTON1; // Mouse4
-			inline float fov = 2.0f;         // screen-space radius in pixels to trigger
-			inline int delay_ms = 50;        // ms delay after target detected before clicking
+			inline int hotkey = VK_XBUTTON1;
+			inline float fov = 2.0f;
+			inline int delay_ms = 50;
 		}
 
 		namespace strafe {
-			inline bool helper = false;  // corrects A/D key to the side that gains speed
-			inline bool autostrafe = false; // full auto-strafe while in air
+			inline bool helper = false;
+			inline bool autostrafe = false;
 		}
 
 		namespace skin {
 			inline bool enabled = false;
-			inline int weapon_id = weapon_awp; // weapon to reskin
-			inline int skin_id = 0;            // item definition index to replace with
+			inline int weapon_id = weapon_awp;
+			inline int skin_id = 0;
+		}
+
+		namespace kill_sound {
+			inline bool enabled = false;
+		}
+
+		namespace hit_marker {
+			inline bool enabled = true;
+			inline color_t color{ 1.f, 0.2f, 0.2f, 1.f };
+			inline float duration_ms = 500.f;
+		}
+
+		namespace auto_zeus {
+			inline bool enabled = false;
+			inline float range = 180.f;
+		}
+
+		namespace auto_knife {
+			inline bool enabled = false;
+			inline float range = 80.f;
+		}
+
+		namespace stats {
+			inline bool enabled = false;
+			inline int hits = 0;
+			inline int kills = 0;
+			inline int shots_fired = 0;
 		}
 	}
 
@@ -152,7 +187,8 @@ namespace settings {
 		inline bool streamproof = false;
 		inline bool vsync = false;
 		inline bool free_cpu = true;
-		inline int toggle_key = VK_F1; // hotkey to toggle cfg::enabled
+		inline int toggle_key = VK_F1;
+		inline std::string current_profile = "default";
 	}
 
 

@@ -1,10 +1,11 @@
 #include "Menu.hpp"
 #include <windows.h>
+#include <algorithm>
 
 #include "config/Config.hpp"
 #include "core/engine/cache/Cache.hpp"
-#include "gui/renderer/Renderer.hpp" // Circular dependency
-#include "gui/renderer/window/Window.hpp" // Circular dependency
+#include "gui/renderer/Renderer.hpp"
+#include "gui/renderer/window/Window.hpp"
 #include "assets/fonts/Icons.h";
 
 
@@ -329,6 +330,41 @@ void Menu::RenderImpl() {
 						ImGui::SliderFloat("Max Move (px)", &cfg::aimbot::soft_aim_max_move, 0.5f, 20.0f, "%.1f");
 					}
 					ImGui::EndDisabled();
+
+					ImGui::Spacing();
+					ImGui::Text("Multi-Bone");
+					ImGui::Separator();
+
+					ImGui::Checkbox("Multi-Bone Aimbot", &cfg::aimbot::multi_bone);
+					ImGui::SetItemTooltip("Iterate head/neck/chest and lock onto the bone closest to crosshair");
+					ImGui::BeginDisabled(!cfg::aimbot::multi_bone);
+					{
+						static const char* bone_labels[] = { "Head", "Neck", "Chest" };
+						static const int bone_vals[] = { 7, 6, 23 };
+						for (int i = 0; i < 3; i++) {
+							bool active = false;
+							for (int v : cfg::aimbot::bone_priority)
+								if (v == bone_vals[i]) { active = true; break; }
+							if (ImGui::Checkbox(bone_labels[i], &active)) {
+								if (active) {
+									cfg::aimbot::bone_priority.push_back(bone_vals[i]);
+								} else {
+									cfg::aimbot::bone_priority.erase(
+										std::remove(cfg::aimbot::bone_priority.begin(), cfg::aimbot::bone_priority.end(), bone_vals[i]),
+										cfg::aimbot::bone_priority.end()
+									);
+								}
+							}
+							if (i < 2) ImGui::SameLine();
+						}
+					}
+					ImGui::EndDisabled();
+
+					ImGui::Spacing();
+					ImGui::Text("Zoom");
+					ImGui::Separator();
+					ImGui::Checkbox("FOV Scales With Zoom", &cfg::aimbot::fov_zoom_scale);
+					ImGui::SetItemTooltip("Shrinks the aimbot FOV circle when scoped to match actual visible FOV");
 				}
 				else if (active_tab == Tab::WORLD)
 				{
@@ -392,6 +428,14 @@ void Menu::RenderImpl() {
 					ImGui::Checkbox("Auto Strafe", &cfg::misc::strafe::autostrafe);
 					ImGui::SetItemTooltip("Fully automates A/D strafing while in the air");
 
+					ImGui::Checkbox("Anti-AFK", &cfg::misc::anti_afk);
+					ImGui::SetItemTooltip("Wiggles A/D periodically to prevent AFK kick");
+					ImGui::BeginDisabled(!cfg::misc::anti_afk);
+					{
+						ImGui::SliderInt("AFK Interval (s)", &cfg::misc::anti_afk_interval_s, 10, 300, "%ds");
+					}
+					ImGui::EndDisabled();
+
 					ImGui::Spacing();
 					ImGui::Text("Combat");
 					ImGui::Separator();
@@ -430,6 +474,41 @@ void Menu::RenderImpl() {
 					}
 					ImGui::EndDisabled();
 
+					ImGui::Checkbox("Auto Zeus", &cfg::misc::auto_zeus::enabled);
+					ImGui::SetItemTooltip("Switches to Zeus and fires when an enemy is in range");
+					ImGui::BeginDisabled(!cfg::misc::auto_zeus::enabled);
+					{
+						ImGui::SliderFloat("Zeus Range", &cfg::misc::auto_zeus::range, 50.f, 300.f, "%.0f u");
+					}
+					ImGui::EndDisabled();
+
+					ImGui::Checkbox("Auto Knife", &cfg::misc::auto_knife::enabled);
+					ImGui::SetItemTooltip("Switches to knife and swings when an enemy is in range");
+					ImGui::BeginDisabled(!cfg::misc::auto_knife::enabled);
+					{
+						ImGui::SliderFloat("Knife Range", &cfg::misc::auto_knife::range, 30.f, 150.f, "%.0f u");
+					}
+					ImGui::EndDisabled();
+
+					ImGui::Spacing();
+					ImGui::Text("Feedback");
+					ImGui::Separator();
+
+					ImGui::Checkbox("Kill Sound", &cfg::misc::kill_sound::enabled);
+					ImGui::SetItemTooltip("Plays kill.wav on kill (place kill.wav next to the exe)");
+
+					ImGui::Checkbox("Hit Marker", &cfg::misc::hit_marker::enabled);
+					ImGui::BeginDisabled(!cfg::misc::hit_marker::enabled);
+					{
+						ImGui::SameLine();
+						ImGui::ColorEdit4("Hit Marker Color", cfg::misc::hit_marker::color.data(), color_flags);
+						ImGui::SliderFloat("Duration (ms)", &cfg::misc::hit_marker::duration_ms, 100.f, 1500.f, "%.0f ms");
+					}
+					ImGui::EndDisabled();
+
+					ImGui::Checkbox("Session Stats", &cfg::misc::stats::enabled);
+					ImGui::SetItemTooltip("Shows hit/kill/shot counter overlay");
+
 					ImGui::Spacing();
 					ImGui::Text("Visual");
 					ImGui::Separator();
@@ -465,6 +544,52 @@ void Menu::RenderImpl() {
 
 					ImGui::Checkbox("Free CPU", &cfg::settings::free_cpu);
 					ImGui::SetItemTooltip("Let the CPU sleep to Free Resources\nNOTE: might cause performance issues in lower end computers!");
+
+					ImGui::Spacing();
+					ImGui::Text("Config Profiles");
+					ImGui::Separator();
+
+					{
+						static char profile_name_buf[64] = "";
+						static std::vector<std::string> profile_list;
+						static int profile_selected = -1;
+						static bool profiles_dirty = true;
+
+						if (profiles_dirty) {
+							profile_list = Config::ListProfiles();
+							profile_selected = -1;
+							for (int i = 0; i < (int)profile_list.size(); i++) {
+								if (profile_list[i] == cfg::settings::current_profile) {
+									profile_selected = i;
+									break;
+								}
+							}
+							profiles_dirty = false;
+						}
+
+						std::vector<const char*> profile_cstrs;
+						for (auto& s : profile_list) profile_cstrs.push_back(s.c_str());
+
+						ImGui::SetNextItemWidth(160.f);
+						if (ImGui::Combo("##profiles", &profile_selected, profile_cstrs.data(), (int)profile_cstrs.size())) {
+							if (profile_selected >= 0 && profile_selected < (int)profile_list.size()) {
+								Config::ReadProfile(profile_list[profile_selected]);
+								strncpy_s(profile_name_buf, profile_list[profile_selected].c_str(), sizeof(profile_name_buf) - 1);
+							}
+						}
+						ImGui::SameLine();
+						if (ImGui::Button("Refresh")) profiles_dirty = true;
+
+						ImGui::SetNextItemWidth(160.f);
+						ImGui::InputText("##profile_name", profile_name_buf, sizeof(profile_name_buf));
+						ImGui::SameLine();
+						if (ImGui::Button("Save As")) {
+							if (profile_name_buf[0] != '\0') {
+								Config::WriteProfile(profile_name_buf);
+								profiles_dirty = true;
+							}
+						}
+					}
 
 					ImGui::Spacing();
 					ImGui::Text("Toggle Keybind");

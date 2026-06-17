@@ -46,39 +46,44 @@ void Aimbot::Thread() {
             float bestDist = cfg::aimbot::fov * 10.f;
             Vec2_t bestTargetPos = { 0, 0 };
 
-
             for (auto& player : snapshot.players) {
                 if (!player.alive || player.localplayer) continue;
                 if (player.team == snapshot.local.team) continue;
                 if (player.bone_list.empty()) continue;
 
-                int targetBone = cfg::aimbot::bone;
-                if (targetBone < 0 || targetBone >= (int)player.bone_list.size()) continue;
-                auto target_bone = player.bone_list[targetBone];
-
-                // Predict target
-                Vec3_t aimPos = target_bone.pos;
-                if (cfg::aimbot::velocity_comp) {
-                    float scale = cfg::aimbot::velocity_comp_scale;
-                    // relative velocity
-                    Vec3_t relVel = {
-                        player.vel.x - snapshot.local.vel.x,
-                        player.vel.y - snapshot.local.vel.y,
-                        player.vel.z - snapshot.local.vel.z
-                    };
-                    aimPos.x += relVel.x * scale;
-                    aimPos.y += relVel.y * scale;
-                    aimPos.z += relVel.z * scale;
+                std::vector<int> bonesToCheck;
+                if (cfg::aimbot::multi_bone) {
+                    bonesToCheck = cfg::aimbot::bone_priority;
+                } else {
+                    bonesToCheck = { cfg::aimbot::bone };
                 }
 
-                Vec2_t bonePos;
-                if (!snapshot.game.view_matrix.wts(aimPos, Vec2_t(screenX * 2, screenY * 2), bonePos, false)) continue;
+                for (int boneIdx : bonesToCheck) {
+                    if (boneIdx < 0 || boneIdx >= (int)player.bone_list.size()) continue;
+                    auto target_bone = player.bone_list[boneIdx];
 
-                float dist = sqrt(pow(bonePos.x - screenCenter.x, 2) + pow(bonePos.y - screenCenter.y, 2));
-                if (dist < bestDist) {
-                    bestDist = dist;
-                    bestTarget = &player;
-                    bestTargetPos = bonePos;
+                    Vec3_t aimPos = target_bone.pos;
+                    if (cfg::aimbot::velocity_comp) {
+                        float scale = cfg::aimbot::velocity_comp_scale;
+                        Vec3_t relVel = {
+                            player.vel.x - snapshot.local.vel.x,
+                            player.vel.y - snapshot.local.vel.y,
+                            player.vel.z - snapshot.local.vel.z
+                        };
+                        aimPos.x += relVel.x * scale;
+                        aimPos.y += relVel.y * scale;
+                        aimPos.z += relVel.z * scale;
+                    }
+
+                    Vec2_t bonePos;
+                    if (!snapshot.game.view_matrix.wts(aimPos, Vec2_t(screenX * 2, screenY * 2), bonePos, false)) continue;
+
+                    float dist = sqrt(pow(bonePos.x - screenCenter.x, 2) + pow(bonePos.y - screenCenter.y, 2));
+                    if (dist < bestDist) {
+                        bestDist = dist;
+                        bestTarget = &player;
+                        bestTargetPos = bonePos;
+                    }
                 }
             }
 

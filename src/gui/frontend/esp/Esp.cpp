@@ -1,9 +1,12 @@
 #include "Esp.hpp"
 
 #include <cmath>
+#include <algorithm>
+#include <chrono>
 #include "gui/renderer/Renderer.hpp"
 #include "assets/fonts/WeaponIcons.h"
 #include "assets/fonts/Icons.h"
+#include "core/engine/features/Misc.hpp"
 
 bool Esp::Init() {
 	return GetInstance().InitImpl();
@@ -94,6 +97,7 @@ void Esp::RenderImpl() {
 
 	RenderCrosshair(local);
 	RenderAimbotFOV();
+	RenderHitMarkers();
 	ImGui::PopFont();
 }
 
@@ -524,14 +528,60 @@ void Esp::RenderAimbotFOV() {
 		return;
 
 	constexpr float DEG_TO_RAD = 3.14159265f / 180.f;
-	constexpr float STATIC_FOV = 90.f;  // CS2 default horizontal FOV
+
+	auto snapshot = Cache::CopySnapshot();
+	float gameFov = 90.f;
+	if (cfg::aimbot::fov_zoom_scale && snapshot.local.scoped && snapshot.local.zoom_level > 0) {
+		static const float zoom_fov[] = { 90.f, 40.f, 15.f };
+		int zl = snapshot.local.zoom_level;
+		if (zl < 0) zl = 0;
+		if (zl > 2) zl = 2;
+		gameFov = zoom_fov[zl];
+	}
 
 	ImVec2 center(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f);
 	float halfWindowWidth = io.DisplaySize.x * 0.5f;
 
 	float aimFovTan = tanf(cfg::aimbot::fov * DEG_TO_RAD * 0.5f);
-	float staticFovTan = tanf(STATIC_FOV * DEG_TO_RAD * 0.5f);
+	float staticFovTan = tanf(gameFov * DEG_TO_RAD * 0.5f);
 	float radius = (aimFovTan / staticFovTan) * halfWindowWidth;
 
 	d->AddCircle(center, radius, ImColor(cfg::aimbot::fov_color), 64, 1.5f);
+}
+
+void Esp::RenderHitMarkers() {
+	if (!cfg::misc::hit_marker::enabled)
+		return;
+
+	float now = std::chrono::duration<float>(
+		std::chrono::steady_clock::now().time_since_epoch()).count();
+	float duration_s = cfg::misc::hit_marker::duration_ms / 1000.f;
+
+	std::lock_guard<std::mutex> lock(Misc::hit_marker_mutex);
+
+	Misc::hit_markers.erase(
+		std::remove_if(Misc::hit_markers.begin(), Misc::hit_markers.end(),
+			[&](const Misc::HitMarker& hm) { return (now - hm.created_at) >= duration_s; }),
+		Misc::hit_markers.end()
+	);
+
+	for (auto& hm : Misc::hit_markers) {
+		float t = (now - hm.created_at) / duration_s;
+		float alpha = 1.f - t;
+		auto& col = cfg::misc::hit_marker::color;
+		ImU32 c = IM_COL32(
+			(int)(col.r * 255),
+			(int)(col.g * 255),
+			(int)(col.b * 255),
+			(int)(col.a * alpha * 255)
+		);
+		float x = hm.screen_pos.x;
+		float y = hm.screen_pos.y;
+		constexpr float sz = 8.f;
+		constexpr float gap = 3.f;
+		d->AddLine(ImVec2(x - sz, y - sz), ImVec2(x - gap, y - gap), c, 1.5f);
+		d->AddLine(ImVec2(x + gap, y - gap), ImVec2(x + sz, y - sz), c, 1.5f);
+		d->AddLine(ImVec2(x - sz, y + sz), ImVec2(x - gap, y + gap), c, 1.5f);
+		d->AddLine(ImVec2(x + gap, y + gap), ImVec2(x + sz, y + sz), c, 1.5f);
+	}
 }

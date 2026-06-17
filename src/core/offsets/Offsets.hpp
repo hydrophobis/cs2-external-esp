@@ -49,6 +49,8 @@ inline DWORD csgoInput;
 		constexpr std::ptrdiff_t m_iClip1 = 0x16D8; // int32 - C_BasePlayerWeapon
 		constexpr std::ptrdiff_t m_bInReload = 0x17F4; // bool - C_CSWeaponBase
 
+		constexpr std::ptrdiff_t m_zoomLevel = 0x17B8; // int32 - C_CSWeaponBase (0=unscoped, 1=zoom1, 2=zoom2)
+
 			// C_CSWeaponBase
 			constexpr std::ptrdiff_t m_nNextPrimaryAttackTick = 0x16C8; // GameTick_t
 			constexpr std::ptrdiff_t m_fAccuracyPenalty = 0x17D0; // float32

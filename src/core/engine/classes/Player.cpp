@@ -187,6 +187,11 @@ bool Player::UpdateWeapon() {
 	this->is_reloading = weapon.is_reloading;
 	this->weapon_ptr = weapon.entity_ptr;
 
+	if (weapon.entity_ptr)
+		this->zoom_level = p->read<int>(weapon.entity_ptr + offsets::pawn::m_zoomLevel);
+	else
+		this->zoom_level = 0;
+
 	return true;
 }
 
