@@ -36,7 +36,9 @@ inline DWORD csgoInput;
 		constexpr std::ptrdiff_t m_entitySpottedState = 0x1C38; // EntitySpottedState_t
 		constexpr std::ptrdiff_t m_bSpottedByMask = 0xC; // uint32[2] - EntitySpottedState_t
 		
-		constexpr std::ptrdiff_t m_flFlashOverlayAlpha = 0x13F4; // float32 - C_CSPlayerPawnBase 
+		constexpr std::ptrdiff_t m_flFlashOverlayAlpha = 0x13F4; // float32 - C_CSPlayerPawnBase
+			constexpr std::ptrdiff_t m_flFlashMaxAlpha = 0x13FC; // float32 - C_CSPlayerPawnBase
+			constexpr std::ptrdiff_t m_flFlashDuration = 0x1400; // float32 - C_CSPlayerPawnBase
 		
 		constexpr std::ptrdiff_t m_pWeaponServices = 0x11E0; // CPlayer_WeaponServices*
 		constexpr std::ptrdiff_t m_hActiveWeapon = 0x60; // CHandle<C_BasePlayerWeapon> - CPlayer_WeaponServices

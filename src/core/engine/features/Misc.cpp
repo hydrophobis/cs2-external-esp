@@ -30,6 +30,8 @@ void Misc::Thread() {
         auto snapshot = Cache::CopySnapshot();
 
         if (cfg::misc::anti_flash && snapshot.local.alive && snapshot.local.pawn_addr) {
+            p->write<float>(snapshot.local.pawn_addr + offsets::pawn::m_flFlashDuration, 0.f);
+            p->write<float>(snapshot.local.pawn_addr + offsets::pawn::m_flFlashMaxAlpha, 0.f);
             p->write<float>(snapshot.local.pawn_addr + offsets::pawn::m_flFlashOverlayAlpha, 0.f);
         }
 
