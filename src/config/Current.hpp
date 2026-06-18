@@ -10,6 +10,7 @@ namespace cfg {
 		inline bool team = true;
 
 		inline bool box = true;
+		inline bool box_3d = false;
 		inline bool armor = true;
 		inline bool health = true;
 		inline bool skeleton = true;
@@ -17,8 +18,14 @@ namespace cfg {
 		inline bool health_number = false;
 
 		inline bool spotted = false;
+		inline bool visible_only = false;
 
 		inline bool tracers = false;
+
+		inline bool dropped_weapons = false;
+		inline bool grenade_esp = false;
+
+		inline bool vision_ray = false;
 
 		namespace flags {
 			inline bool name = true;
@@ -30,20 +37,30 @@ namespace cfg {
 			inline bool money = false;
 			inline bool flashed = false;
 			inline bool scoped = false;
+			inline bool distance = false;
 		}
 
 		namespace colors {
 			inline color_t box_team{ 0.f, 1.f, 0.29f, 0.5f };
 			inline color_t box_enemy{ 1.f, 0.f, 0.f, 0.5f };
 
+			inline color_t box_visible{ 0.f, 1.f, 0.f, 0.8f };
+			inline color_t box_occluded{ 1.f, 0.f, 0.f, 0.8f };
+
 			inline color_t skeleton_team{ 0.f, 1.f, 0.f, 0.5f };
 			inline color_t skeleton_enemy{ 1.f, 0.f, 0.f, 0.5f };
+
+			inline color_t skeleton_visible{ 0.f, 1.f, 0.f, 0.8f };
+			inline color_t skeleton_occluded{ 1.f, 0.f, 0.f, 0.8f };
 
 			inline color_t tracker_team{ 1.f, 1.f, 1.f, 0.3f };
 			inline color_t tracker_enemy{ 1.f, 1.f, 1.f, 0.3f };
 
 			inline color_t tracer_team{ 0.f, 1.f, 0.f, 0.5f };
 			inline color_t tracer_enemy{ 1.f, 0.f, 0.f, 0.5f };
+
+			inline color_t dropped_weapon{ 1.f, 1.f, 0.f, 0.7f };
+			inline color_t grenade_color{ 1.f, 0.5f, 0.f, 0.8f };
 
 			namespace flags {
 				inline color_t flashed_team{ 1.f, 1.f, 1.f, 0.5f };
@@ -58,7 +75,7 @@ namespace cfg {
 				inline color_t scoped_team{ 1.f, 1.f, 1.f, 0.5f };
 				inline color_t scoped_enemy{ 1.f, 1.f, 1.f, 0.8f };
 			}
-			
+
 		}
 
 	}
@@ -76,6 +93,7 @@ namespace cfg {
 		namespace bomb {
 			inline bool location = true;
 			inline bool timer = true;
+			inline bool damage_calc = false;
 		}
 
 		namespace crosshair {
@@ -107,12 +125,13 @@ namespace cfg {
 		inline int hotkey = 0x12;
 		inline int bone = 7;
 		inline bool rcs = false;
-		inline float rcs_x = 1.4f;
-		inline float rcs_y = 1.4f;
+		inline float rcs_x = 2.0f;
+		inline float rcs_y = 2.0f;
 		inline float sensitivity = 2.0f;
 
 		inline bool draw_fov = false;
 		inline color_t fov_color{ 1.f, 1.f, 1.f, 0.5f };
+		inline bool visible_only = false;
 
 		inline bool humanize = false;
 		inline float smooth_variance = 0.3f;
@@ -129,11 +148,15 @@ namespace cfg {
 
 		inline bool fov_zoom_scale = true;
 		inline bool always_on = false;
+
+		inline bool angle_write = true;
 	}
 
 	namespace misc {
 		inline bool bhop = false;
+		inline int bhop_hotkey = VK_SPACE;
 		inline bool anti_flash = false;
+		inline bool anti_smoke = false;
 		inline bool anti_afk = false;
 		inline int anti_afk_interval_s = 60;
 
@@ -145,11 +168,11 @@ namespace cfg {
 			inline bool draw = false;
 			inline color_t draw_color{ 1.f, 1.f, 0.f, 0.5f };
 			inline bool always_on = false;
+			inline bool visible_only = false;
 		}
 
 		namespace strafe {
 			inline bool helper = false;
-			inline bool autostrafe = false;
 		}
 
 		namespace skin {
@@ -171,11 +194,13 @@ namespace cfg {
 		namespace auto_zeus {
 			inline bool enabled = false;
 			inline float range = 180.f;
+			inline bool visible_only = false;
 		}
 
 		namespace auto_knife {
 			inline bool enabled = false;
 			inline float range = 80.f;
+			inline bool visible_only = false;
 		}
 
 		namespace stats {
@@ -189,19 +214,34 @@ namespace cfg {
 			inline bool enabled = false;
 			inline bool accept_match = true;
 		}
+
+		namespace clantag {
+			inline bool enabled = false;
+			inline char text[32] = "";
+		}
+
+		namespace fake_ping {
+			inline bool enabled = false;
+			inline int ping = 0;
+		}
+
+		namespace rank_revealer {
+			inline bool enabled = false;
+		}
 	}
 
-namespace settings {
+	namespace settings {
 		inline bool watermark = true;
 		inline bool streamproof = false;
 		inline bool vsync = false;
 		inline bool free_cpu = true;
 		inline int toggle_key = VK_F1;
+		inline int panic_key = VK_END;
 		inline std::string current_profile = "default";
+		inline bool keybinds_overlay = true;
+		inline bool save_on_exit = true;
 	}
 
-
-	// Not stored, just for testing
 	namespace dev {
 		inline bool console = true;
 		inline int open_menu_key = false;

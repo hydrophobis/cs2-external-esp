@@ -5,28 +5,25 @@
 #include "core/offsets/Dumper.hpp"
 
 #include "core/engine/classes/ObserverServices.hpp"
+#include <cstring>
 
 bool Player::Update() {
 	if (!Engine::GetProcess())
 		return false;
 
 	if (!GetController()) {
-		//LOGF(WARNING, "Failed to GET controller for entity index({})", index);
 		return false;
 	}
 
 	if (!GetPawn()) {
-		//LOGF(WARNING, "Failed to GET pawn for entity index({})", index);
 		return false;
 	}
 
 	if (!UpdateController()) {
-		//LOGF(WARNING, "Failed to UPDATE controller for entity index({})", index);
 		return false;
 	}
 
 	if (!UpdatePawn()) {
-		//LOGF(WARNING, "Failed to UPDATE pawn for entity index({})", index);
 		return false;
 	}
 
@@ -37,7 +34,7 @@ bool Player::GetController() {
 	auto p = Engine::GetProcess();
 	auto client = Engine::GetClient();
 
-	this->controller = p->read<DWORD64>(list_entry + (index + 1) * 0x70); // before was 0x78
+	this->controller = p->read<DWORD64>(list_entry + (index + 1) * 0x70);
 
 	return this->controller != 0;
 }
@@ -70,9 +67,10 @@ bool Player::UpdateController() {
 	this->steam_id = p->read<uint64_t>(controller + offsets::controller::m_steamID);
 	this->bot = this->steam_id == 0;
 
-	// expensive
+	std::memset(this->name, 0, sizeof(this->name));
 	if (!p->read_raw(controller + offsets::controller::m_iszPlayerName, this->name, sizeof(this->name)))
 		return false;
+	this->name[sizeof(this->name) - 1] = '\0';
 
 	this->localplayer = p->read<bool>(controller + offsets::controller::m_bIsLocalPlayerController);
 	this->ping = p->read<int>(controller + offsets::controller::m_iPing);
@@ -99,7 +97,7 @@ bool Player::UpdatePawn() {
 
 	UpdateObserverServices();
 
-	if (!alive) // No need to continue 
+	if (!alive)
 		return true;
 
 	this->pos = p->read<Vec3_t>(pawn + offsets::pawn::m_vOldOrigin);
@@ -113,13 +111,16 @@ bool Player::UpdatePawn() {
 
 	this->armor = p->read<int>(pawn + offsets::pawn::m_ArmorValue);
 	this->defusing = p->read<bool>(pawn + offsets::pawn::m_bIsDefusing);
-	this->spotted = p->read<bool>(pawn + offsets::pawn::m_entitySpottedState + offsets::pawn::m_bSpottedByMask);
+
+	this->spotted_by_mask = {};
+	p->read_raw(pawn + offsets::pawn::m_entitySpottedState + offsets::pawn::m_bSpottedByMask, this->spotted_by_mask.data(), sizeof(this->spotted_by_mask));
+	this->spotted = (spotted_by_mask[0] != 0 || spotted_by_mask[1] != 0);
+	this->visible = this->spotted;
 	this->flashed = p->read<float>(pawn + offsets::pawn::m_flFlashOverlayAlpha) > 0;
 	this->scoped = p->read<bool>(pawn + offsets::pawn::m_bIsScoped);
 
     this->shotsFired = p->read<int>(pawn + offsets::pawn::m_iShotsFired);
 
-    // Read aim punch via AimPunchServices poiner
     uintptr_t aimPunchServices = p->read<uintptr_t>(pawn + offsets::pawn::m_pAimPunchServices);
     if (aimPunchServices) {
         this->aimPunch = p->read<Vec2_t>(aimPunchServices + offsets::pawn::aimPunchServices::m_predictableBaseAngle);
@@ -132,9 +133,7 @@ bool Player::UpdatePawn() {
 		return false;
 	}
 
-	// Shows errors when player just respawned
 	if (!UpdateWeapon()) {
-		//LOGF(FATAL, "Failed to update weapon"); // too verbose
 		return false;
 	}
 
@@ -144,6 +143,9 @@ bool Player::UpdatePawn() {
 
 bool Player::UpdateSkeleton() {
 	auto p = Engine::GetProcess();
+
+	this->bone_list.clear();
+	this->bone_list.reserve(30);
 
 	auto game_scene = p->read<DWORD64>(this->pawn + offsets::pawn::m_pGameSceneNode);
 
@@ -202,13 +204,9 @@ bool Player::GetBounds(view_matrix_t matrix, Vec2_t size, std::pair<Vec2_t, Vec2
 
 	Vec3_t pos_top;
 	if (this->bone_list.empty())
-		pos_top = this->pos + Vec3_t(0, 0, 65.f); // 75.f
+		pos_top = this->pos + Vec3_t(0, 0, 65.f);
 	else
 		pos_top = this->bone_list[bone_index::head].pos;
-
-	//auto head_bone = this->bone_list[bone_index::head];
-	//head_bone.pos.z *= 1.09; // little offset to cover the entire head
-	//bone_pos head_bone = origin + ImVec3
 
 	Vec2_t top;
 	bool pt2 = matrix.wts(pos_top, size, top);
@@ -221,13 +219,11 @@ bool Player::GetBounds(view_matrix_t matrix, Vec2_t size, std::pair<Vec2_t, Vec2
 
 	top.y -= width / 4;
 
-	// Top to bottom
 	bounds = { top, origin };
 
 	return pt1 || pt2;
 }
 
-// Does not update if match is started
 bool Player::UpdateObserverServices() {
 	auto p = Engine::GetProcess();
 	if (!p) 

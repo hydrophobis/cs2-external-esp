@@ -18,7 +18,7 @@ public:
 	bool is_reloading;
 	uintptr_t entity_ptr = 0;
 
-private:
+public:
 	const char* ToString() const;
 	const char* ToIcon() const;
 

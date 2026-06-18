@@ -39,4 +39,5 @@ private:
     void RenderDebugWindow();
     void RenderSpectatorList();
     void RenderSessionStats();
+    void RenderKeybindsOverlay();
 };

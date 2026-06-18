@@ -2,6 +2,7 @@
 #include "core/engine/classes/Bones.hpp"
 #include "core/engine/classes/Weapon.hpp"
 #include "core/engine/classes/ObserverServices.hpp"
+#include <array>
 
 class Player {
 public:
@@ -12,7 +13,7 @@ public:
     bool Update();
     bool GetBounds(view_matrix_t matrix, Vec2_t size, std::pair<Vec2_t, Vec2_t>& bounds);
 public:
-    int8_t index = -1; // To use as invalid/un-initialize check
+    int8_t index = -1;
 
     Vec3_t pos;
     Vec3_t vel;
@@ -28,6 +29,8 @@ public:
     bool scoped = false;
     bool flashed = false;
     bool spotted = false;
+    bool visible = false;
+    std::array<uint32_t, 2> spotted_by_mask{};
     bool defusing = false;
     bool localplayer = false;
 
@@ -35,12 +38,11 @@ public:
     int shotsFired = 0;
 
     char name[32];
-    //std::string name;
     uint64_t steam_id{};
 
     Weapon weapon;
-    uintptr_t weapon_ptr = 0; // resolved weapon entity address
-    uintptr_t pawn_addr = 0; // pawn entity address
+    uintptr_t weapon_ptr = 0;
+    uintptr_t pawn_addr = 0;
     int32_t ammo;
     bool is_reloading;
 

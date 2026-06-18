@@ -6,7 +6,7 @@
 #include "core/engine/cache/Cache.hpp"
 #include "gui/renderer/Renderer.hpp"
 #include "gui/renderer/window/Window.hpp"
-#include "assets/fonts/Icons.h";
+#include "assets/fonts/Icons.h"
 
 
 bool Menu::Init() {
@@ -64,7 +64,7 @@ void Menu::RenderImpl() {
 		{
 			auto size = ImGui::GetContentRegionAvail();
 
-			ImGui::BeginChild("##tab_buttons", ImVec2(120, size.y), true);
+			ImGui::BeginChild("##tab_buttons", ImVec2(160, size.y), true);
 			{
 				ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.1f, 0.5f));
 				for (const auto& tab : tabs)
@@ -153,6 +153,9 @@ void Menu::RenderImpl() {
 							ImGui::ColorEdit4("Enemy tracer color", cfg::esp::colors::tracer_enemy.data(), color_flags);
 						}
 						ImGui::EndDisabled();
+
+						ImGui::Checkbox("Vision Ray", &cfg::esp::vision_ray);
+						ImGui::SetItemTooltip("Draws a line from your position to each player to visualize line of sight");
 					}
 					ImGui::EndGroup();
 
@@ -169,10 +172,33 @@ void Menu::RenderImpl() {
 						ImGui::SetItemTooltip("Esp will only be visible if the player has been spotted by you");
 
 						ImGui::Checkbox("Show Team", &cfg::esp::team);
+
+						ImGui::Checkbox("3D Box", &cfg::esp::box_3d);
+						ImGui::Checkbox("Visible Only", &cfg::esp::visible_only);
+						ImGui::SetItemTooltip("Only show ESP for players currently visible to you");
 					}
 					ImGui::EndGroup();
 
-					//ImGui::SameLine();
+					ImGui::Spacing();
+					ImGui::Text("World ESP");
+					ImGui::Separator();
+
+					ImGui::Checkbox("Dropped Weapons", &cfg::esp::dropped_weapons);
+					ImGui::BeginDisabled(!cfg::esp::dropped_weapons);
+					{
+						ImGui::SameLine();
+						ImGui::ColorEdit4("Dropped Weapon Color", cfg::esp::colors::dropped_weapon.data(), color_flags);
+					}
+					ImGui::EndDisabled();
+
+					ImGui::Checkbox("Grenade ESP", &cfg::esp::grenade_esp);
+					ImGui::BeginDisabled(!cfg::esp::grenade_esp);
+					{
+						ImGui::SameLine();
+						ImGui::ColorEdit4("Grenade Color", cfg::esp::colors::grenade_color.data(), color_flags);
+					}
+					ImGui::EndDisabled();
+
 					ImGui::Spacing();
 
 					ImGui::Text("Flags");
@@ -231,6 +257,7 @@ void Menu::RenderImpl() {
 						ImGui::Checkbox("Weapon", &cfg::esp::flags::weapon);
 						ImGui::Checkbox("Ammo", &cfg::esp::flags::ammo);
 						ImGui::Checkbox("Ping", &cfg::esp::flags::ping);
+						ImGui::Checkbox("Distance", &cfg::esp::flags::distance);
 					}
 					ImGui::EndGroup();
 				}
@@ -242,13 +269,16 @@ void Menu::RenderImpl() {
 					ImGui::Checkbox("Enable Aimbot", &cfg::aimbot::enabled);
 					ImGui::BeginDisabled(!cfg::aimbot::enabled);
 					{
+						ImGui::Checkbox("Angle Write", &cfg::aimbot::angle_write);
+						ImGui::SetItemTooltip("Writes view angles directly instead of mouse movement (more accurate, bypasses mouse events)");
+						ImGui::Checkbox("Visible Targets Only", &cfg::aimbot::visible_only);
+						ImGui::SetItemTooltip("Only aim at targets that are currently visible to you");
+
 						ImGui::SliderFloat("FOV", &cfg::aimbot::fov, 1.0f, 180.0f, "%.1f");
 						ImGui::Checkbox("Draw FOV", &cfg::aimbot::draw_fov);
-						ImGui::SameLine();
 						ImGui::ColorEdit4("FOV Color", cfg::aimbot::fov_color.data(), color_flags);
 						ImGui::SliderFloat("Smoothing", &cfg::aimbot::smooth, 1.0f, 20.0f, "%.1f");
 
-						// Bone selector
 						const char* bone_names[] = { "Head", "Neck", "Chest", "Spine" };
 						int bone_values[] = { 7, 6, 23, 4 };
 						int bone_current = 0;
@@ -256,7 +286,6 @@ void Menu::RenderImpl() {
 						if (ImGui::Combo("Target Bone", &bone_current, bone_names, 4))
 							cfg::aimbot::bone = bone_values[bone_current];
 
-						// Hotkey picker with VK name lookup
 						static bool waiting_for_key = false;
 						if (waiting_for_key) {
 							ImGui::Button("Press any key...", ImVec2(-1, 0));
@@ -316,8 +345,6 @@ void Menu::RenderImpl() {
 					ImGui::BeginDisabled(!cfg::aimbot::rcs);
 					{
 						ImGui::SliderFloat("Sensitivity", &cfg::aimbot::sensitivity, 0.1f, 10.0f, "%.2f");
-						ImGui::SliderFloat("RCS X", &cfg::aimbot::rcs_x, 0.0f, 4.0f, "%.2f");
-						ImGui::SliderFloat("RCS Y", &cfg::aimbot::rcs_y, 0.0f, 4.0f, "%.2f");
 					}
 					ImGui::EndDisabled();
 
@@ -376,6 +403,8 @@ void Menu::RenderImpl() {
 
 					ImGui::Checkbox("Bomb Location", &cfg::world::bomb::location);
 					ImGui::Checkbox("Bomb Timer", &cfg::world::bomb::timer);
+					ImGui::Checkbox("Bomb Damage Calc", &cfg::world::bomb::damage_calc);
+					ImGui::SetItemTooltip("Shows estimated damage you will take from the bomb explosion");
 
 					ImGui::Spacing();
 
@@ -416,7 +445,7 @@ void Menu::RenderImpl() {
 					}
 					ImGui::EndDisabled();
 				}
-				else if (active_tab == Tab::MISC)
+				else if (active_tab == Tab::MOVEMENT)
 				{
 					ImGui::Text("Movement");
 					ImGui::Separator();
@@ -427,9 +456,6 @@ void Menu::RenderImpl() {
 					ImGui::Checkbox("Strafe Helper", &cfg::misc::strafe::helper);
 					ImGui::SetItemTooltip("Corrects A/D to match mouse turn direction mid-air");
 
-					ImGui::Checkbox("Auto Strafe", &cfg::misc::strafe::autostrafe);
-					ImGui::SetItemTooltip("Fully automates A/D strafing while in the air");
-
 					ImGui::Checkbox("Anti-AFK", &cfg::misc::anti_afk);
 					ImGui::SetItemTooltip("Wiggles A/D periodically to prevent AFK kick");
 					ImGui::BeginDisabled(!cfg::misc::anti_afk);
@@ -437,24 +463,32 @@ void Menu::RenderImpl() {
 						ImGui::SliderInt("AFK Interval (s)", &cfg::misc::anti_afk_interval_s, 10, 300, "%ds");
 					}
 					ImGui::EndDisabled();
-
-					ImGui::Spacing();
-					ImGui::Text("Combat");
+				}
+				else if (active_tab == Tab::COMBAT)
+				{
+					ImGui::Text("Visuals");
 					ImGui::Separator();
 
 					ImGui::Checkbox("Anti Flash", &cfg::misc::anti_flash);
-					ImGui::SetItemTooltip("Zeroes flash alpha every tick — you never go blind");
+					ImGui::SetItemTooltip("Zeroes flash alpha every tick - you never go blind");
+
+					ImGui::Checkbox("Anti Smoke (WIP)", &cfg::misc::anti_smoke);
+					ImGui::SetItemTooltip("Reduces smoke opacity for visibility through smokes");
+
+					ImGui::Text("Weapons");
+					ImGui::Separator();
 
 					ImGui::Checkbox("Trigger Bot", &cfg::misc::triggerbot::enabled);
 					ImGui::BeginDisabled(!cfg::misc::triggerbot::enabled);
 					{
 						ImGui::SliderFloat("Trigger FOV", &cfg::misc::triggerbot::fov, 0.5f, 20.0f, "%.1f px");
 						ImGui::SliderInt("Trigger Delay", &cfg::misc::triggerbot::delay_ms, 0, 300, "%d ms");
+						ImGui::Checkbox("Visible Targets Only", &cfg::misc::triggerbot::visible_only);
+						ImGui::SetItemTooltip("Only trigger on targets that are currently visible to you");
 
 						ImGui::Checkbox("Draw FOV##tbot", &cfg::misc::triggerbot::draw);
 						ImGui::BeginDisabled(!cfg::misc::triggerbot::draw);
 						{
-							ImGui::SameLine();
 							ImGui::ColorEdit4("FOV Color##tbot", cfg::misc::triggerbot::draw_color.data(), color_flags);
 						}
 						ImGui::EndDisabled();
@@ -491,6 +525,8 @@ void Menu::RenderImpl() {
 					ImGui::BeginDisabled(!cfg::misc::auto_zeus::enabled);
 					{
 						ImGui::SliderFloat("Zeus Range", &cfg::misc::auto_zeus::range, 50.f, 300.f, "%.0f u");
+						ImGui::Checkbox("Visible Targets Only##zeus", &cfg::misc::auto_zeus::visible_only);
+						ImGui::SetItemTooltip("Only use Zeus on targets that are currently visible to you");
 					}
 					ImGui::EndDisabled();
 
@@ -499,10 +535,11 @@ void Menu::RenderImpl() {
 					ImGui::BeginDisabled(!cfg::misc::auto_knife::enabled);
 					{
 						ImGui::SliderFloat("Knife Range", &cfg::misc::auto_knife::range, 30.f, 150.f, "%.0f u");
+						ImGui::Checkbox("Visible Targets Only##knife", &cfg::misc::auto_knife::visible_only);
+						ImGui::SetItemTooltip("Only use knife on targets that are currently visible to you");
 					}
 					ImGui::EndDisabled();
 
-					ImGui::Spacing();
 					ImGui::Text("Feedback");
 					ImGui::Separator();
 
@@ -512,7 +549,6 @@ void Menu::RenderImpl() {
 					ImGui::Checkbox("Hit Marker", &cfg::misc::hit_marker::enabled);
 					ImGui::BeginDisabled(!cfg::misc::hit_marker::enabled);
 					{
-						ImGui::SameLine();
 						ImGui::ColorEdit4("Hit Marker Color", cfg::misc::hit_marker::color.data(), color_flags);
 						ImGui::SliderFloat("Duration (ms)", &cfg::misc::hit_marker::duration_ms, 100.f, 1500.f, "%.0f ms");
 					}
@@ -520,10 +556,36 @@ void Menu::RenderImpl() {
 
 					ImGui::Checkbox("Session Stats", &cfg::misc::stats::enabled);
 					ImGui::SetItemTooltip("Shows hit/kill/shot counter overlay");
-
-					ImGui::Spacing();
-					ImGui::Text("Queue");
+				}
+				else if (active_tab == Tab::UTILITY)
+				{
+					ImGui::Text("Clantag (WIP)");
 					ImGui::Separator();
+
+					ImGui::Checkbox("Clantag Changer", &cfg::misc::clantag::enabled);
+					ImGui::SetItemTooltip("Writes a custom clan tag to the local player controller");
+					ImGui::BeginDisabled(!cfg::misc::clantag::enabled);
+					{
+						ImGui::InputText("Clantag", cfg::misc::clantag::text, sizeof(cfg::misc::clantag::text));
+					}
+					ImGui::EndDisabled();
+
+					ImGui::Text("Ping");
+					ImGui::Separator();
+
+					ImGui::Checkbox("Fake Ping", &cfg::misc::fake_ping::enabled);
+					ImGui::SetItemTooltip("Spoofs your ping value in the scoreboard");
+					ImGui::BeginDisabled(!cfg::misc::fake_ping::enabled);
+					{
+						ImGui::SliderInt("Ping (ms)", &cfg::misc::fake_ping::ping, 0, 999, "%d ms");
+					}
+					ImGui::EndDisabled();
+
+					ImGui::Text("Ranks");
+					ImGui::Separator();
+
+					ImGui::Checkbox("Rank Revealer", &cfg::misc::rank_revealer::enabled);
+					ImGui::SetItemTooltip("Forces rank display in the scoreboard");
 
 					ImGui::Checkbox("Auto Queue", &cfg::misc::auto_queue::enabled);
 					ImGui::SetItemTooltip("Clicks Play every 3s when not in a match");
@@ -534,8 +596,7 @@ void Menu::RenderImpl() {
 					}
 					ImGui::EndDisabled();
 
-					ImGui::Spacing();
-					ImGui::Text("Visual");
+					ImGui::Text("Skin Changer (WIP)");
 					ImGui::Separator();
 
 					ImGui::Checkbox("Skin Changer", &cfg::misc::skin::enabled);
@@ -563,6 +624,10 @@ void Menu::RenderImpl() {
 					}
 
 					ImGui::Checkbox("Watermark", &cfg::settings::watermark);
+					ImGui::Checkbox("Keybinds Overlay", &cfg::settings::keybinds_overlay);
+					ImGui::SetItemTooltip("Shows a small HUD with active features and their hotkeys");
+					ImGui::Checkbox("Save on Exit", &cfg::settings::save_on_exit);
+					ImGui::SetItemTooltip("Automatically saves config when closing the overlay");
 
 					if (ImGui::Checkbox("VSync", &cfg::settings::vsync))
 						Window::vsync = cfg::settings::vsync;
@@ -644,6 +709,30 @@ void Menu::RenderImpl() {
 							waiting_for_toggle_key = true;
 						if (ImGui::IsItemHovered())
 							ImGui::SetTooltip("Click to rebind the enable/disable toggle key");
+					}
+
+					static bool waiting_for_panic_key = false;
+					if (waiting_for_panic_key) {
+						ImGui::Button("Press any key...", ImVec2(-1, 0));
+						for (int i = 1; i < 256; i++) {
+							if (i == VK_LBUTTON || i == VK_RBUTTON || i == VK_MBUTTON) continue;
+							if (GetAsyncKeyState(i) & 0x8000) {
+								cfg::settings::panic_key = i;
+								waiting_for_panic_key = false;
+								break;
+							}
+						}
+					} else {
+						char panic_label[64];
+						UINT sc = MapVirtualKey(cfg::settings::panic_key, MAPVK_VK_TO_VSC);
+						if (GetKeyNameTextA((LONG)(sc << 16), panic_label, 64) == 0)
+							sprintf_s(panic_label, sizeof(panic_label), "0x%X", cfg::settings::panic_key);
+						char panic_btn[80];
+						sprintf_s(panic_btn, sizeof(panic_btn), "Panic Key: %s", panic_label);
+						if (ImGui::Button(panic_btn, ImVec2(-1, 0)))
+							waiting_for_panic_key = true;
+						if (ImGui::IsItemHovered())
+							ImGui::SetItemTooltip("Press this key to instantly disable everything and close");
 					}
 
 					ImGui::Text("Notes");
@@ -801,3 +890,4 @@ void Menu::RenderStartupHelpImpl() {
 		help
 	);
 }
+

@@ -42,6 +42,7 @@ public:
 	bool AttachWindow(const char* window_name);
 	bool UpdateHWND();
 	void Close();
+	std::string GetProcessPath();
 
 public:
 	ProcessModule GetModule(const char* module_name);

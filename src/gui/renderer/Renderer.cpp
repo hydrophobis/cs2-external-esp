@@ -5,6 +5,7 @@
 #include "gui/frontend/esp/Esp.hpp"
 #include "gui/frontend/menu/Menu.hpp"
 #include "gui/frontend/overlays/Overlays.hpp"
+#include "config/Config.hpp"
 
 bool Renderer::Init() {
     return GetInstance().InitImpl();
@@ -16,7 +17,7 @@ void Renderer::Thread() {
 
 void Renderer::Destroy() {
     return GetInstance().DestroyImpl();
-}   
+}
 
 bool Renderer::IsOpen() {
     return GetInstance().isOpen;
@@ -60,6 +61,12 @@ bool Renderer::InitImpl() {
 }
 
 void Renderer::DestroyImpl() {
+    // Save config on exit
+    if (cfg::settings::save_on_exit) {
+        Config::Write();
+        LOGF(INFO, "Config saved on exit");
+    }
+
     isRunning = false; // Prepare to stop thread loop
     LOGF(VERBOSE, "Successfully programed renderer destruction...");
 }
@@ -68,7 +75,7 @@ void Renderer::ThreadImpl() {
     while (isRunning) {
         Render();
 
-        // If the game is not focused dont do states, 
+        // If the game is not focused dont do states,
         // or will start focusing game & overlay
         if (this->isFocused && HandleState())
             continue; // It will cause flickering if we handle window order after window closes
@@ -104,6 +111,15 @@ bool Renderer::HandleState() {
 
     bool pressed_end = (GetAsyncKeyState(VK_END) & 0x8000);
 
+    // Panic key: instantly disable everything and close
+    if (cfg::settings::panic_key && (GetAsyncKeyState(cfg::settings::panic_key) & 0x8000)) {
+        cfg::enabled = false;
+        if (cfg::settings::save_on_exit)
+            Config::Write();
+        this->isRunning = false;
+        return true;
+    }
+
     bool should_toggle = !was_holding && (pressed_insert || pressed_rshift);
 
     if (should_toggle || pressed_end) { // Toggle when pressing end to trigger the config save :v
@@ -123,8 +139,11 @@ bool Renderer::HandleState() {
         std::thread(Config::Write).detach(); // Not needed, but just in case
     }
 
-    if (pressed_end)
+    if (pressed_end) {
+        if (cfg::settings::save_on_exit)
+            Config::Write();
         this->isRunning = false;
+    }
 
     was_holding = pressed_insert || pressed_rshift;
     return should_toggle;
@@ -150,7 +169,7 @@ bool Renderer::HandleWindowOrder() {
         return true;
     }
 
-    if (!overlay_visible && this->isFocused) {  
+    if (!overlay_visible && this->isFocused) {
         ShowWindow(Window::hwnd, SW_SHOW);
         overlay_visible = true;
         return true;

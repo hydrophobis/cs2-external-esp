@@ -1,9 +1,25 @@
 #include "Overlays.hpp"
 
 #include "updater/Updater.hpp"
-#include "gui/renderer/Renderer.hpp" // Circular dependency
-#include "gui/frontend/menu/Menu.hpp" // Circular dependency
+#include "gui/renderer/Renderer.hpp"
+#include "gui/frontend/menu/Menu.hpp"
 #include "assets/fonts/WeaponIcons.h"
+#include "config/Current.hpp"
+
+static const char* VKToString(int vk) {
+	static char buf[64];
+	UINT sc = MapVirtualKey(vk, MAPVK_VK_TO_VSC);
+	if (sc == 0) {
+		sprintf_s(buf, "0x%X", vk);
+		return buf;
+	}
+	LONG lParam = (sc << 16);
+	if (vk >= 0x21 && vk <= 0x2E) lParam |= (1 << 24);
+	if (GetKeyNameTextA(lParam, buf, sizeof(buf)) == 0) {
+		sprintf_s(buf, "0x%X", vk);
+	}
+	return buf;
+}
 
 bool Overlays::Init() {
     return GetInstance().InitImpl();
@@ -21,7 +37,7 @@ bool Overlays::InitImpl() {
 
 	this->font_alt = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\arial.ttf", 14.0f, &cfg);
 	this->font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\consola.ttf", 12.0f, &cfg);
-	
+
 	ImFontConfig merge_icon_cfg{};
 	merge_icon_cfg.FontDataOwnedByAtlas = false;
 	merge_icon_cfg.MergeMode = true;
@@ -29,7 +45,6 @@ bool Overlays::InitImpl() {
 	static const ImWchar icon_ranges[] = { 0xE000, 0xE046, 0 };
 	io.Fonts->AddFontFromMemoryTTF(weapon_icon_font, weapon_icon_font_len, 12.f, &merge_icon_cfg, icon_ranges);
 
-    // Pre allocate buffer
     this->vel_buffer.resize(static_cast<size_t>(cfg::world::velocity::sample_rate * cfg::world::velocity::sample_length));
 
     return true;
@@ -55,6 +70,7 @@ void Overlays::RenderImpl() {
         RenderSpeedChart();
         RenderRadar();
         RenderSessionStats();
+        RenderKeybindsOverlay();
     }
     ImGui::PopFont();
 }
@@ -82,7 +98,7 @@ void Overlays::RenderWatermark() {
 
     auto rect_start = ImVec2(io.DisplaySize.x - margin - padding * 2 - size.x, margin);
     auto rect_end = ImVec2(io.DisplaySize.x - margin, margin + size.y + padding);
-    auto pos = ImVec2(rect_start.x + padding, rect_start.y + padding * 0.6/* compensate font */);
+    auto pos = ImVec2(rect_start.x + padding, rect_start.y + padding * 0.6f);
 
     d->AddRectFilled(
         rect_start,
@@ -123,7 +139,7 @@ void Overlays::RenderNotice() {
     auto menu_size = Menu::GetSize();
 
     auto max_width = menu_size.x - padding * 2;
-    
+
     auto size = ImGui::CalcTextSize(status.notice.data(), nullptr, false, max_width);
 
     auto rect_start = ImVec2(menu_pos.x, menu_pos.y - margin - padding * 2 - size.y);
@@ -156,7 +172,7 @@ void Overlays::RenderNotice() {
         pos,
         IM_COL32(255, 255, 255, 255),
         status.notice.data(),
-        nullptr, 
+        nullptr,
         max_width
     );
 }
@@ -203,7 +219,6 @@ void Overlays::RenderSpectatorList() {
     if (!should_render && !is_menu_open)
         return;
 
-    // Window
     ImGui::SetNextWindowPos(cfg::world::spectators::pos, ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSizeConstraints(ImVec2(150.f, 50.f), ImVec2(FLT_MAX, FLT_MAX));
 
@@ -286,8 +301,8 @@ void Overlays::RenderSpeedChart() {
     auto& pos = cfg::world::velocity::pos;
     auto& size = cfg::world::velocity::size;
 
-    int rate = cfg::world::velocity::sample_rate;
-    float length = cfg::world::velocity::sample_length;
+    int rate = std::max(1, cfg::world::velocity::sample_rate);
+    float length = std::max(1.0f, cfg::world::velocity::sample_length);
 
     static int prev_rate = rate;
     static float prev_length = length;
@@ -304,8 +319,8 @@ void Overlays::RenderSpeedChart() {
         return;
 
     if (is_menu_open) {
-        auto height_padding = 25; // some padding to keep the speed number inside the area
-        auto altitude_padding = 10; // so it doesnt go under the titlebar
+        auto height_padding = 25;
+        auto altitude_padding = 10;
 
         ImGui::SetNextWindowBgAlpha(0.1f);
         ImGui::SetNextWindowPos(pos - Vec2_t(0, altitude_padding), ImGuiCond_Once);
@@ -318,13 +333,15 @@ void Overlays::RenderSpeedChart() {
         }
     }
 
-    // Cache menu values and resize when changed
     if (prev_rate != rate || prev_length != length) {
         prev_rate = rate;
         prev_length = length;
 
         vel_buffer.resize(static_cast<size_t>(rate * length));
     }
+
+    if (vel_buffer.size() < 2)
+        return;
 
     Vec2_t speed_2d(local.vel.x, local.vel.y);
     int speed = floor(speed_2d.len());
@@ -409,8 +426,8 @@ void Overlays::RenderDebugWindow() {
 
 	for (auto& player : players)
 		debug_string += std::format(
-			"- [{}] {} {}hp {} {}\n", 
-			player.index, player.name, 
+			"- [{}] {} {}hp {} {}\n",
+			player.index, player.name,
 			player.health, player.weapon.name,
 			player.weapon.icon
 		);
@@ -571,4 +588,130 @@ void Overlays::RenderSessionStats() {
     }
 
     ImGui::End();
+}
+
+void Overlays::RenderKeybindsOverlay() {
+	if (!cfg::settings::keybinds_overlay)
+		return;
+
+	auto snapshot = Cache::CopySnapshot();
+	auto& local = snapshot.local;
+
+	if (!local.alive && !Renderer::IsOpen())
+		return;
+
+	struct KeybindEntry {
+		const char* name;
+		const char* key;
+		bool active;
+	};
+
+	std::vector<KeybindEntry> entries;
+
+	if (cfg::aimbot::enabled) {
+		bool held = (GetAsyncKeyState(cfg::aimbot::hotkey) & 0x8000) != 0;
+		bool active = cfg::aimbot::always_on ? !held : held;
+		entries.push_back({ "Aimbot", VKToString(cfg::aimbot::hotkey), active });
+	}
+
+	if (cfg::aimbot::rcs) {
+		entries.push_back({ "RCS", "Auto", true });
+	}
+
+	if (cfg::misc::bhop) {
+		bool held = (GetAsyncKeyState(cfg::misc::bhop_hotkey) & 0x8000) != 0;
+		entries.push_back({ "Bhop", VKToString(cfg::misc::bhop_hotkey), held });
+	}
+
+	if (cfg::misc::strafe::helper) {
+		entries.push_back({ "Strafe Helper", "Auto", true });
+	}
+
+	if (cfg::misc::triggerbot::enabled) {
+		bool held = (GetAsyncKeyState(cfg::misc::triggerbot::hotkey) & 0x8000) != 0;
+		bool active = cfg::misc::triggerbot::always_on ? !held : held;
+		entries.push_back({ "Triggerbot", VKToString(cfg::misc::triggerbot::hotkey), active });
+	}
+
+	if (cfg::misc::anti_flash) {
+		entries.push_back({ "Anti Flash", "Auto", true });
+	}
+
+	if (cfg::misc::anti_smoke) {
+		entries.push_back({ "Anti Smoke", "Auto", true });
+	}
+
+	if (cfg::misc::clantag::enabled) {
+		entries.push_back({ "Clantag", "Auto", true });
+	}
+
+	if (cfg::misc::fake_ping::enabled) {
+		entries.push_back({ "Fake Ping", "Auto", true });
+	}
+
+	if (cfg::misc::auto_zeus::enabled) {
+		entries.push_back({ "Auto Zeus", "Auto", true });
+	}
+
+	if (cfg::misc::auto_knife::enabled) {
+		entries.push_back({ "Auto Knife", "Auto", true });
+	}
+
+	if (cfg::misc::auto_queue::enabled) {
+		entries.push_back({ "Auto Queue", "Auto", true });
+	}
+
+	if (entries.empty())
+		return;
+
+	auto d = ImGui::GetBackgroundDrawList();
+
+	static ImVec2 overlay_pos = ImVec2(10.f, 260.f);
+	float line_height = 18.f;
+	float padding = 6.f;
+
+	float max_width = 0.f;
+	for (auto& e : entries) {
+		std::string text = std::format("{} [{}]", e.name, e.key);
+		auto sz = ImGui::CalcTextSize(text.c_str());
+		max_width = std::max(max_width, sz.x);
+	}
+
+	float total_height = entries.size() * line_height + padding * 2;
+	float total_width = max_width + padding * 2;
+
+	d->AddRectFilled(
+		overlay_pos,
+		ImVec2(overlay_pos.x + total_width, overlay_pos.y + total_height),
+		IM_COL32(0, 0, 0, 160),
+		6.f
+	);
+
+	d->AddRect(
+		overlay_pos,
+		ImVec2(overlay_pos.x + total_width, overlay_pos.y + total_height),
+		IM_COL32(80, 80, 80, 120),
+		6.f
+	);
+
+	d->AddText(
+		ImVec2(overlay_pos.x + padding, overlay_pos.y + padding - 2),
+		IM_COL32(180, 180, 180, 220),
+		"Keybinds"
+	);
+
+	float y = overlay_pos.y + padding + line_height;
+	for (auto& e : entries) {
+		ImU32 color = e.active
+			? IM_COL32(100, 255, 100, 255)
+			: IM_COL32(180, 180, 180, 150);
+
+		std::string text = std::format("{} [{}]", e.name, e.key);
+		d->AddText(
+			ImVec2(overlay_pos.x + padding, y),
+			color,
+			text.c_str()
+		);
+		y += line_height;
+	}
 }

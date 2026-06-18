@@ -56,6 +56,7 @@ bool Config::ReadImpl() {
 		cfg::enabled = data.value("enabled", true);
 
 		cfg::esp::box = data["esp"].value("box", true);
+		cfg::esp::box_3d = data["esp"].value("box_3d", false);
 		cfg::esp::team = data["esp"].value("team", true);
 		cfg::esp::armor = data["esp"].value("armor", true);
 		cfg::esp::health = data["esp"].value("health", true);
@@ -64,6 +65,10 @@ bool Config::ReadImpl() {
 		cfg::esp::head_tracker = data["esp"].value("head_tracker", true);
 		cfg::esp::health_number = data["esp"].value("health_number", false);
 		cfg::esp::tracers = data["esp"].value("tracers", false);
+		cfg::esp::dropped_weapons = data["esp"].value("dropped_weapons", false);
+		cfg::esp::grenade_esp = data["esp"].value("grenade_esp", false);
+		cfg::esp::vision_ray = data["esp"].value("vision_ray", false);
+		cfg::esp::visible_only = data["esp"].value("visible_only", false);
 
 		cfg::esp::flags::name = data["esp"]["flags"].value("name", true);
 		cfg::esp::flags::ping = data["esp"]["flags"].value("ping", false);
@@ -74,16 +79,23 @@ bool Config::ReadImpl() {
 		cfg::esp::flags::scoped = data["esp"]["flags"].value("scoped", false);
 		cfg::esp::flags::defusing = data["esp"]["flags"].value("defusing", false);
 		cfg::esp::flags::flashed = data["esp"]["flags"].value("flashed", false);
+		cfg::esp::flags::distance = data["esp"]["flags"].value("distance", false);
 
 		const auto& col = data["esp"]["colors"];
 		cfg::esp::colors::box_team = JsonToColor(col, "box_team", { 0.f, 1.f, 0.29f, 0.5f });
 		cfg::esp::colors::box_enemy = JsonToColor(col, "box_enemy", { 1.f, 0.f, 0.f, 0.5f });
+		cfg::esp::colors::box_visible = JsonToColor(col, "box_visible", { 0.f, 1.f, 0.f, 0.8f });
+		cfg::esp::colors::box_occluded = JsonToColor(col, "box_occluded", { 1.f, 0.f, 0.f, 0.8f });
 		cfg::esp::colors::skeleton_team = JsonToColor(col, "skeleton_team", { 0.f, 1.f, 0.f, 0.5f });
 		cfg::esp::colors::skeleton_enemy = JsonToColor(col, "skeleton_enemy", { 1.f, 0.f, 0.f, 0.5f });
+		cfg::esp::colors::skeleton_visible = JsonToColor(col, "skeleton_visible", { 0.f, 1.f, 0.f, 0.8f });
+		cfg::esp::colors::skeleton_occluded = JsonToColor(col, "skeleton_occluded", { 1.f, 0.f, 0.f, 0.8f });
 		cfg::esp::colors::tracker_team = JsonToColor(col, "tracker_team", { 1.f, 1.f, 1.f, 0.3f });
 		cfg::esp::colors::tracker_enemy = JsonToColor(col, "tracker_enemy", { 1.f, 1.f, 1.f, 0.3f });
 		cfg::esp::colors::tracer_team = JsonToColor(col, "tracer_team", { 0.f, 1.f, 0.f, 0.5f });
 		cfg::esp::colors::tracer_enemy = JsonToColor(col, "tracer_enemy", { 1.f, 0.f, 0.f, 0.5f });
+		cfg::esp::colors::dropped_weapon = JsonToColor(col, "dropped_weapon", { 1.f, 1.f, 0.f, 0.7f });
+		cfg::esp::colors::grenade_color = JsonToColor(col, "grenade_color", { 1.f, 0.5f, 0.f, 0.8f });
 
 		const auto& fcol = data["esp"]["colors"]["flags"];
 		cfg::esp::colors::flags::flashed_team = JsonToColor(fcol, "flashed_team", { 1.f, 1.f, 1.f, 0.5f });
@@ -102,6 +114,7 @@ bool Config::ReadImpl() {
 
 		cfg::world::bomb::location = data["world"]["bomb"].value("bomb_location", true);
 		cfg::world::bomb::timer = data["world"]["bomb"].value("bomb_timer", true);
+		cfg::world::bomb::damage_calc = data["world"]["bomb"].value("damage_calc", false);
 
 		cfg::world::crosshair::enabled = data["world"]["crosshair"].value("enabled", false);
 
@@ -128,6 +141,7 @@ bool Config::ReadImpl() {
 		cfg::aimbot::sensitivity = data["aimbot"].value("sensitivity", 2.0f);
 		cfg::aimbot::draw_fov = data["aimbot"].value("draw_fov", false);
 		cfg::aimbot::fov_color = JsonToColor(data["aimbot"], "fov_color", { 1.f, 1.f, 1.f, 0.5f });
+		cfg::aimbot::visible_only = data["aimbot"].value("visible_only", false);
 		cfg::aimbot::humanize = data["aimbot"].value("humanize", false);
 		cfg::aimbot::smooth_variance = data["aimbot"].value("smooth_variance", 0.3f);
 		cfg::aimbot::jitter = data["aimbot"].value("jitter", 0.5f);
@@ -138,6 +152,7 @@ bool Config::ReadImpl() {
 		cfg::aimbot::multi_bone = data["aimbot"].value("multi_bone", false);
 		cfg::aimbot::fov_zoom_scale = data["aimbot"].value("fov_zoom_scale", true);
 		cfg::aimbot::always_on = data["aimbot"].value("always_on", false);
+		cfg::aimbot::angle_write = data["aimbot"].value("angle_write", true);
 		if (data["aimbot"].contains("bone_priority") && data["aimbot"]["bone_priority"].is_array()) {
 			cfg::aimbot::bone_priority.clear();
 			for (auto& b : data["aimbot"]["bone_priority"])
@@ -145,7 +160,9 @@ bool Config::ReadImpl() {
 		}
 
 		cfg::misc::bhop = data["misc"].value("bhop", false);
+		cfg::misc::bhop_hotkey = data["misc"].value("bhop_hotkey", (int)VK_SPACE);
 		cfg::misc::anti_flash = data["misc"].value("anti_flash", false);
+		cfg::misc::anti_smoke = data["misc"].value("anti_smoke", false);
 		cfg::misc::anti_afk = data["misc"].value("anti_afk", false);
 		cfg::misc::anti_afk_interval_s = data["misc"].value("anti_afk_interval_s", 60);
 		cfg::misc::triggerbot::enabled = data["misc"]["triggerbot"].value("enabled", false);
@@ -155,8 +172,10 @@ bool Config::ReadImpl() {
 		cfg::misc::triggerbot::draw = data["misc"]["triggerbot"].value("draw", false);
 		cfg::misc::triggerbot::draw_color = JsonToColor(data["misc"]["triggerbot"], "draw_color", { 1.f, 1.f, 0.f, 0.5f });
 		cfg::misc::triggerbot::always_on = data["misc"]["triggerbot"].value("always_on", false);
+		cfg::misc::triggerbot::visible_only = data["misc"]["triggerbot"].value("visible_only", false);
+		cfg::misc::auto_zeus::visible_only = data["misc"]["auto_zeus"].value("visible_only", false);
+		cfg::misc::auto_knife::visible_only = data["misc"]["auto_knife"].value("visible_only", false);
 		cfg::misc::strafe::helper = data["misc"]["strafe"].value("helper", false);
-		cfg::misc::strafe::autostrafe = data["misc"]["strafe"].value("autostrafe", false);
 		cfg::misc::skin::enabled = data["misc"]["skin"].value("enabled", false);
 		cfg::misc::skin::weapon_id = data["misc"]["skin"].value("weapon_id", (int)weapon_awp);
 		cfg::misc::skin::skin_id = data["misc"]["skin"].value("skin_id", 0);
@@ -171,12 +190,23 @@ bool Config::ReadImpl() {
 		cfg::misc::stats::enabled = data["misc"]["stats"].value("enabled", false);
 		cfg::misc::auto_queue::enabled = data["misc"]["auto_queue"].value("enabled", false);
 		cfg::misc::auto_queue::accept_match = data["misc"]["auto_queue"].value("accept_match", true);
+		cfg::misc::clantag::enabled = data["misc"]["clantag"].value("enabled", false);
+		if (data["misc"]["clantag"].contains("text") && data["misc"]["clantag"]["text"].is_string()) {
+			std::string txt = data["misc"]["clantag"]["text"].get<std::string>();
+			strncpy_s(cfg::misc::clantag::text, txt.c_str(), sizeof(cfg::misc::clantag::text) - 1);
+		}
+		cfg::misc::fake_ping::enabled = data["misc"]["fake_ping"].value("enabled", false);
+		cfg::misc::fake_ping::ping = data["misc"]["fake_ping"].value("ping", 0);
+		cfg::misc::rank_revealer::enabled = data["misc"]["rank_revealer"].value("enabled", false);
 
 		cfg::settings::watermark = data["utils"].value("watermark", true);
 		cfg::settings::streamproof = data["utils"].value("streamproof", false);
 		cfg::settings::vsync = data["utils"].value("vsync", true);
 		cfg::settings::free_cpu = data["utils"].value("free_cpu", true);
 		cfg::settings::toggle_key = data["utils"].value("toggle_key", VK_F1);
+		cfg::settings::panic_key = data["utils"].value("panic_key", VK_END);
+		cfg::settings::keybinds_overlay = data["utils"].value("keybinds_overlay", true);
+		cfg::settings::save_on_exit = data["utils"].value("save_on_exit", true);
 	}
 	catch (const std::exception& e) {
 		LOGF(FATAL, "Failed to parse configuration");
@@ -197,6 +227,7 @@ bool Config::WriteImpl() {
 	data["enabled"] = cfg::enabled;
 
 	data["esp"]["box"] = cfg::esp::box;
+	data["esp"]["box_3d"] = cfg::esp::box_3d;
 	data["esp"]["team"] = cfg::esp::team;
 	data["esp"]["armor"] = cfg::esp::armor;
 	data["esp"]["health"] = cfg::esp::health;
@@ -205,6 +236,10 @@ bool Config::WriteImpl() {
 	data["esp"]["head_tracker"] = cfg::esp::head_tracker;
 	data["esp"]["spotted"] = cfg::esp::spotted;
 	data["esp"]["tracers"] = cfg::esp::tracers;
+	data["esp"]["dropped_weapons"] = cfg::esp::dropped_weapons;
+	data["esp"]["grenade_esp"] = cfg::esp::grenade_esp;
+	data["esp"]["vision_ray"] = cfg::esp::vision_ray;
+	data["esp"]["visible_only"] = cfg::esp::visible_only;
 
 	data["esp"]["flags"]["name"] = cfg::esp::flags::name;
 	data["esp"]["flags"]["ping"] = cfg::esp::flags::ping;
@@ -215,14 +250,16 @@ bool Config::WriteImpl() {
 	data["esp"]["flags"]["reloading"] = cfg::esp::flags::reloading;
 	data["esp"]["flags"]["flashed"] = cfg::esp::flags::flashed;
 	data["esp"]["flags"]["defusing"] = cfg::esp::flags::defusing;
+	data["esp"]["flags"]["distance"] = cfg::esp::flags::distance;
 
 	data["world"]["spectators"]["enabled"] = cfg::world::spectators::enabled;
 	data["world"]["spectators"]["detailed"] = cfg::world::spectators::detailed;
 	data["world"]["spectators"]["self_only"] = cfg::world::spectators::self_only;
 	Vec2ToJson(data["world"]["spectators"], "pos", cfg::world::spectators::pos);
 
-	data["world"]["bomb"]["location"] = cfg::world::bomb::location;
-	data["world"]["bomb"]["timer"] = cfg::world::bomb::timer;
+	data["world"]["bomb"]["bomb_location"] = cfg::world::bomb::location;
+	data["world"]["bomb"]["bomb_timer"] = cfg::world::bomb::timer;
+	data["world"]["bomb"]["damage_calc"] = cfg::world::bomb::damage_calc;
 
 	data["world"]["crosshair"]["enabled"] = cfg::world::crosshair::enabled;
 
@@ -241,12 +278,18 @@ bool Config::WriteImpl() {
 	auto& col = data["esp"]["colors"];
 	ColorToJson(col, "box_team", cfg::esp::colors::box_team);
 	ColorToJson(col, "box_enemy", cfg::esp::colors::box_enemy);
+	ColorToJson(col, "box_visible", cfg::esp::colors::box_visible);
+	ColorToJson(col, "box_occluded", cfg::esp::colors::box_occluded);
 	ColorToJson(col, "skeleton_team", cfg::esp::colors::skeleton_team);
 	ColorToJson(col, "skeleton_enemy", cfg::esp::colors::skeleton_enemy);
+	ColorToJson(col, "skeleton_visible", cfg::esp::colors::skeleton_visible);
+	ColorToJson(col, "skeleton_occluded", cfg::esp::colors::skeleton_occluded);
 	ColorToJson(col, "tracker_team", cfg::esp::colors::tracker_team);
 	ColorToJson(col, "tracker_enemy", cfg::esp::colors::tracker_enemy);
 	ColorToJson(col, "tracer_team", cfg::esp::colors::tracer_team);
 	ColorToJson(col, "tracer_enemy", cfg::esp::colors::tracer_enemy);
+	ColorToJson(col, "dropped_weapon", cfg::esp::colors::dropped_weapon);
+	ColorToJson(col, "grenade_color", cfg::esp::colors::grenade_color);
 
 	auto& fcol = col["flags"];
 	ColorToJson(fcol, "flashed_team", cfg::esp::colors::flags::flashed_team);
@@ -269,6 +312,7 @@ bool Config::WriteImpl() {
 	data["aimbot"]["sensitivity"] = cfg::aimbot::sensitivity;
 	data["aimbot"]["draw_fov"] = cfg::aimbot::draw_fov;
 	ColorToJson(data["aimbot"], "fov_color", cfg::aimbot::fov_color);
+	data["aimbot"]["visible_only"] = cfg::aimbot::visible_only;
 	data["aimbot"]["humanize"] = cfg::aimbot::humanize;
 	data["aimbot"]["smooth_variance"] = cfg::aimbot::smooth_variance;
 	data["aimbot"]["jitter"] = cfg::aimbot::jitter;
@@ -279,10 +323,13 @@ bool Config::WriteImpl() {
 	data["aimbot"]["multi_bone"] = cfg::aimbot::multi_bone;
 	data["aimbot"]["fov_zoom_scale"] = cfg::aimbot::fov_zoom_scale;
 	data["aimbot"]["always_on"] = cfg::aimbot::always_on;
+	data["aimbot"]["angle_write"] = cfg::aimbot::angle_write;
 	data["aimbot"]["bone_priority"] = cfg::aimbot::bone_priority;
 
 	data["misc"]["bhop"] = cfg::misc::bhop;
+	data["misc"]["bhop_hotkey"] = cfg::misc::bhop_hotkey;
 	data["misc"]["anti_flash"] = cfg::misc::anti_flash;
+	data["misc"]["anti_smoke"] = cfg::misc::anti_smoke;
 	data["misc"]["anti_afk"] = cfg::misc::anti_afk;
 	data["misc"]["anti_afk_interval_s"] = cfg::misc::anti_afk_interval_s;
 	data["misc"]["triggerbot"]["enabled"] = cfg::misc::triggerbot::enabled;
@@ -292,8 +339,10 @@ bool Config::WriteImpl() {
 	data["misc"]["triggerbot"]["draw"] = cfg::misc::triggerbot::draw;
 	ColorToJson(data["misc"]["triggerbot"], "draw_color", cfg::misc::triggerbot::draw_color);
 	data["misc"]["triggerbot"]["always_on"] = cfg::misc::triggerbot::always_on;
+	data["misc"]["triggerbot"]["visible_only"] = cfg::misc::triggerbot::visible_only;
+	data["misc"]["auto_zeus"]["visible_only"] = cfg::misc::auto_zeus::visible_only;
+	data["misc"]["auto_knife"]["visible_only"] = cfg::misc::auto_knife::visible_only;
 	data["misc"]["strafe"]["helper"] = cfg::misc::strafe::helper;
-	data["misc"]["strafe"]["autostrafe"] = cfg::misc::strafe::autostrafe;
 	data["misc"]["skin"]["enabled"] = cfg::misc::skin::enabled;
 	data["misc"]["skin"]["weapon_id"] = cfg::misc::skin::weapon_id;
 	data["misc"]["skin"]["skin_id"] = cfg::misc::skin::skin_id;
@@ -308,12 +357,20 @@ bool Config::WriteImpl() {
 	data["misc"]["stats"]["enabled"] = cfg::misc::stats::enabled;
 	data["misc"]["auto_queue"]["enabled"] = cfg::misc::auto_queue::enabled;
 	data["misc"]["auto_queue"]["accept_match"] = cfg::misc::auto_queue::accept_match;
+	data["misc"]["clantag"]["enabled"] = cfg::misc::clantag::enabled;
+	data["misc"]["clantag"]["text"] = std::string(cfg::misc::clantag::text);
+	data["misc"]["fake_ping"]["enabled"] = cfg::misc::fake_ping::enabled;
+	data["misc"]["fake_ping"]["ping"] = cfg::misc::fake_ping::ping;
+	data["misc"]["rank_revealer"]["enabled"] = cfg::misc::rank_revealer::enabled;
 
 	data["utils"]["watermark"] = cfg::settings::watermark;
 	data["utils"]["streamproof"] = cfg::settings::streamproof;
 	data["utils"]["vsync"] = cfg::settings::vsync;
 	data["utils"]["free_cpu"] = cfg::settings::free_cpu;
 	data["utils"]["toggle_key"] = cfg::settings::toggle_key;
+	data["utils"]["panic_key"] = cfg::settings::panic_key;
+	data["utils"]["keybinds_overlay"] = cfg::settings::keybinds_overlay;
+	data["utils"]["save_on_exit"] = cfg::settings::save_on_exit;
 
 	f << std::setw(4) << data << std::endl;
 	f.close();

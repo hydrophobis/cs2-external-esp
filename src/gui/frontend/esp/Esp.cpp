@@ -13,7 +13,7 @@ bool Esp::Init() {
 }
 
 void Esp::Render() {
-    return GetInstance().RenderImpl();
+	return GetInstance().RenderImpl();
 }
 
 bool Esp::InitImpl() {
@@ -48,6 +48,22 @@ bool Esp::InitImpl() {
 	return true;
 }
 
+// gradient
+static ImU32 HealthColor(int health) {
+	float t = std::clamp(health / 100.f, 0.f, 1.f);
+	float r, g;
+	if (t > 0.5f) {
+		float s = (t - 0.5f) * 2.f; // 1=green, 0=yellow
+		r = 1.f - s;
+		g = 1.f;
+	} else {
+		float s = t * 2.f; // 0=red, 1=yellow
+		r = 1.f;
+		g = s;
+	}
+	return IM_COL32((int)(r * 255), (int)(g * 255), 0, 255);
+}
+
 void Esp::RenderImpl() {
 	if (!cfg::enabled)
 		return;
@@ -58,7 +74,8 @@ void Esp::RenderImpl() {
 	auto& local = snapshot.local;
 	auto& globals = snapshot.globals;
 	auto& players = snapshot.players;
-	
+	auto& worldEntities = snapshot.world_entities;
+
 	ImGui::PushFont(this->font);
 
 	this->io = ImGui::GetIO();
@@ -83,17 +100,24 @@ void Esp::RenderImpl() {
 		if (cfg::esp::spotted && !player.spotted)
 			continue;
 
+		if (cfg::esp::visible_only && !player.visible)
+			continue;
+
 		// Are we spectating the player in first person? then dont render
-		// TODO: Exception here when spectating someone
 		if (
 			local.observer_services.target == player.pawn_controller_addr
 			&& local.observer_services.mode == ObserverMode::First
-		)
+			)
 			continue;
 
 		RenderPlayerTracers(local, player, mate);
+		RenderPlayerVisionRay(local, player, mate);
 		RenderPlayer(player, mate);
 	}
+
+	// World entities
+	RenderDroppedWeapons(worldEntities, local);
+	RenderGrenades(worldEntities, local);
 
 	RenderCrosshair(local);
 	RenderAimbotFOV();
@@ -103,8 +127,6 @@ void Esp::RenderImpl() {
 }
 
 void Esp::RenderPlayer(Player player, bool mate) {
-	// Needed for flags & item sizing, so even if the box is not enabled
-	// Should be calculated
 	std::pair<Vec2_t, Vec2_t> bounds;
 	if (!player.GetBounds(matrix, io.DisplaySize, bounds))
 		return;
@@ -114,13 +136,68 @@ void Esp::RenderPlayer(Player player, bool mate) {
 		return;
 
 	if (cfg::esp::box) {
-		auto color = mate ? cfg::esp::colors::box_team : cfg::esp::colors::box_enemy;
+		if (cfg::esp::box_3d) {
+			Vec3_t foot = player.pos;
+			Vec3_t headPos = player.bone_list.empty() ? (player.pos + Vec3_t(0, 0, 75.f)) : player.bone_list[bone_index::head].pos;
+			headPos.z += 10.f; // extend above head bone
 
-		d->AddRect(
-			bounds.first,
-			bounds.second,
-			ImColor(color)
-		);
+			float halfW = (bounds.second.x - bounds.first.x) * 0.5f;
+			float height3d = headPos.z - foot.z;
+			float width3d = height3d * 0.4f; // approximate width
+
+			Vec3_t mins = foot - Vec3_t(width3d * 0.5f, width3d * 0.5f, 0);
+			Vec3_t maxs = foot + Vec3_t(width3d * 0.5f, width3d * 0.5f, height3d);
+
+			Vec3_t corners[8] = {
+				Vec3_t(mins.x, mins.y, mins.z),
+				Vec3_t(maxs.x, mins.y, mins.z),
+				Vec3_t(maxs.x, maxs.y, mins.z),
+				Vec3_t(mins.x, maxs.y, mins.z),
+				Vec3_t(mins.x, mins.y, maxs.z),
+				Vec3_t(maxs.x, mins.y, maxs.z),
+				Vec3_t(maxs.x, maxs.y, maxs.z),
+				Vec3_t(mins.x, maxs.y, maxs.z),
+			};
+
+			Vec2_t screen[8];
+			bool allValid = true;
+			for (int i = 0; i < 8; i++) {
+				if (!matrix.wts(corners[i], io.DisplaySize, screen[i], false)) {
+					allValid = false;
+					break;
+				}
+			}
+
+			if (allValid) {
+				auto color = player.visible
+					? cfg::esp::colors::box_visible
+					: (mate ? cfg::esp::colors::box_team : cfg::esp::colors::box_enemy);
+
+				// Bottom face: 0-1-2-3
+				// Top face: 4-5-6-7
+				// Verticals: 0-4, 1-5, 2-6, 3-7
+				int edges[12][2] = {
+					{0,1},{1,2},{2,3},{3,0}, // bottom
+					{4,5},{5,6},{6,7},{7,4}, // top
+					{0,4},{1,5},{2,6},{3,7}  // verticals
+				};
+
+				for (auto& edge : edges) {
+					d->AddLine(screen[edge[0]], screen[edge[1]], ImColor(color), 1.5f);
+				}
+			}
+		} else {
+			// 2D box with visibility coloring
+			auto color = player.visible
+				? cfg::esp::colors::box_visible
+				: (mate ? cfg::esp::colors::box_team : cfg::esp::colors::box_enemy);
+
+			d->AddRect(
+				bounds.first,
+				bounds.second,
+				ImColor(color)
+			);
+		}
 	}
 
 	if (cfg::esp::skeleton)
@@ -130,11 +207,13 @@ void Esp::RenderPlayer(Player player, bool mate) {
 		RenderPlayerTracker(player, bounds, mate);
 
 	RenderPlayerBars(player, bounds);
-	RenderPlayerFalgs(player, bounds, mate);
+	RenderPlayerFlags(player, bounds, mate);
 }
 
 void Esp::RenderPlayerBones(Player player, bool mate) {
-	auto color = mate ? cfg::esp::colors::skeleton_team : cfg::esp::colors::skeleton_enemy;
+	auto color = player.visible
+		? cfg::esp::colors::skeleton_visible
+		: (mate ? cfg::esp::colors::skeleton_team : cfg::esp::colors::skeleton_enemy);
 
 	auto bone_count = player.bone_list.size();
 	for (const auto& bone : connections) {
@@ -195,10 +274,11 @@ void Esp::RenderPlayerBars(Player player, std::pair<Vec2_t, Vec2_t> bounds) {
 		float height = y_end - y_start;
 		float filled_height = height * (player.health / 100.0f);
 
+		// Health gradient bar (green→yellow→red)
 		d->AddRectFilled(
 			ImVec2(x_start, y_end - filled_height),
 			ImVec2(x_end, y_end),
-			IM_COL32(100, 255, 100, 255)
+			HealthColor(player.health)
 		);
 
 		d->AddRect(
@@ -246,7 +326,7 @@ void Esp::RenderPlayerBars(Player player, std::pair<Vec2_t, Vec2_t> bounds) {
 	}
 }
 
-void Esp::RenderPlayerFalgs(Player player, std::pair<Vec2_t, Vec2_t> bounds, bool mate) {
+void Esp::RenderPlayerFlags(Player player, std::pair<Vec2_t, Vec2_t> bounds, bool mate) {
 	if (cfg::esp::flags::name) {
 		auto sanitized_name = std::format("{}{}", player.name, (player.bot ? " (Bot)" : ""));
 		auto name_size = ImGui::CalcTextSize(sanitized_name.data());
@@ -255,7 +335,7 @@ void Esp::RenderPlayerFalgs(Player player, std::pair<Vec2_t, Vec2_t> bounds, boo
 			Vec2_t(
 				(bounds.first.x + bounds.second.x) / 2 - name_size.x / 2,
 				bounds.first.y - 20
-			), 
+			),
 			IM_COL32(255, 255, 255, 255),
 			sanitized_name.data()
 		);
@@ -295,6 +375,19 @@ void Esp::RenderPlayerFalgs(Player player, std::pair<Vec2_t, Vec2_t> bounds, boo
 			std::format("{}ms", player.ping).c_str()
 		);
 
+		offset -= offset_mult;
+	}
+
+	// Distance flag
+	if (cfg::esp::flags::distance) {
+		auto snapshot = Cache::CopySnapshot();
+		float dist = player.pos.dist_to(snapshot.local.pos);
+		auto dist_str = std::format("{:.0f}m", dist * 0.01905f); // CS2 units to meters (1 unit rough 0.01905m)
+		d->AddText(
+			bounds.first - Vec2_t((bounds.first.x - bounds.second.x) - 10, offset),
+			IM_COL32(255, 255, 255, 255),
+			dist_str.c_str()
+		);
 		offset -= offset_mult;
 	}
 
@@ -359,6 +452,151 @@ void Esp::RenderPlayerFalgs(Player player, std::pair<Vec2_t, Vec2_t> bounds, boo
 			IM_COL32(255, 255, 255, 255),
 			player.weapon.icon
 		);
+	}
+
+	ImGui::PopFont();
+}
+
+void Esp::RenderPlayerVisionRay(Player local, Player player, bool mate) {
+	if (!cfg::esp::vision_ray)
+		return;
+
+	// Draw a line from the player eye
+	if (player.bone_list.empty())
+		return;
+
+	// Get head bone 
+	Vec3_t eyePos = player.bone_list[bone_index::head].pos;
+
+	Vec3_t dir = player.vel;
+	if (dir.length_2d() < 1.f) {
+		// Player is standing still, skip the ray
+		return;
+	}
+
+	// Normalize the 2D direction and project forward
+	float len = dir.length_2d();
+	Vec3_t forward = dir / len;
+	Vec3_t rayEnd = eyePos + forward * 200.f; // 200 units forward
+
+	Vec2_t screenEye, screenEnd;
+	if (!matrix.wts(eyePos, io.DisplaySize, screenEye, false))
+		return;
+	if (!matrix.wts(rayEnd, io.DisplaySize, screenEnd, false))
+		return;
+
+	auto color = mate ? cfg::esp::colors::skeleton_team : cfg::esp::colors::skeleton_enemy;
+
+	d->AddLine(
+		screenEye,
+		screenEnd,
+		ImColor(color),
+		1.0f
+	);
+}
+
+void Esp::RenderDroppedWeapons(const std::vector<WorldEntity>& worldEntities, Player local) {
+	if (!cfg::esp::dropped_weapons)
+		return;
+
+	if (!local.alive)
+		return;
+
+	ImGui::PushFont(this->font_merged_icons);
+
+	for (auto& we : worldEntities) {
+		if (we.type != WorldEntity::Type::DroppedWeapon)
+			continue;
+
+		Vec2_t screenPos;
+		if (!matrix.wts(we.pos, io.DisplaySize, screenPos))
+			continue;
+
+		auto color = cfg::esp::colors::dropped_weapon;
+
+		// Draw weapon icon
+		auto icon_size = ImGui::CalcTextSize(we.icon);
+		d->AddText(
+			Vec2_t(screenPos.x - icon_size.x * 0.5f, screenPos.y - icon_size.y * 0.5f),
+			ImColor(color),
+			we.icon
+		);
+
+		// Draw name below icon
+		auto name_size = ImGui::CalcTextSize(we.name);
+		d->AddText(
+			Vec2_t(screenPos.x - name_size.x * 0.5f, screenPos.y + icon_size.y * 0.5f + 2),
+			ImColor(color),
+			we.name
+		);
+
+		// Draw distance
+		float dist = we.pos.dist_to(local.pos);
+		auto dist_str = std::format("{:.0f}m", dist * 0.01905f);
+		auto dist_size = ImGui::CalcTextSize(dist_str.c_str());
+		d->AddText(
+			Vec2_t(screenPos.x - dist_size.x * 0.5f, screenPos.y + icon_size.y * 0.5f + name_size.y + 4),
+			IM_COL32(200, 200, 200, 200),
+			dist_str.c_str()
+		);
+	}
+
+	ImGui::PopFont();
+}
+
+void Esp::RenderGrenades(const std::vector<WorldEntity>& worldEntities, Player local) {
+	if (!cfg::esp::grenade_esp)
+		return;
+
+	if (!local.alive)
+		return;
+
+	ImGui::PushFont(this->font_merged_icons);
+
+	for (auto& we : worldEntities) {
+		if (we.type != WorldEntity::Type::GrenadeProjectile)
+			continue;
+
+		Vec2_t screenPos;
+		if (!matrix.wts(we.pos, io.DisplaySize, screenPos))
+			continue;
+
+		auto color = cfg::esp::colors::grenade_color;
+
+		// Draw grenade icon
+		auto icon_size = ImGui::CalcTextSize(we.icon);
+		d->AddText(
+			Vec2_t(screenPos.x - icon_size.x * 0.5f, screenPos.y - icon_size.y * 0.5f),
+			ImColor(color),
+			we.icon
+		);
+
+		// Draw name
+		auto name_size = ImGui::CalcTextSize(we.name);
+		d->AddText(
+			Vec2_t(screenPos.x - name_size.x * 0.5f, screenPos.y + icon_size.y * 0.5f + 2),
+			ImColor(color),
+			we.name
+		);
+
+		// Draw distance
+		float dist = we.pos.dist_to(local.pos);
+		auto dist_str = std::format("{:.0f}m", dist * 0.01905f);
+		auto dist_size = ImGui::CalcTextSize(dist_str.c_str());
+		d->AddText(
+			Vec2_t(screenPos.x - dist_size.x * 0.5f, screenPos.y + icon_size.y * 0.5f + name_size.y + 4),
+			IM_COL32(200, 200, 200, 200),
+			dist_str.c_str()
+		);
+
+		// Draw timer circle for live grenades
+		if (we.timer > 0.f) {
+			d->AddText(
+				Vec2_t(screenPos.x - 5, screenPos.y - icon_size.y * 0.5f - 14),
+				IM_COL32(255, 255, 255, 255),
+				std::format("{:.0f}s", we.timer).c_str()
+			);
+		}
 	}
 
 	ImGui::PopFont();
@@ -453,7 +691,7 @@ void Esp::RenderPlayerTracers(Player source, Player player, bool mate) {
 }
 
 void Esp::RenderBomb(Player local, Bomb bomb) {
-	if (!cfg::world::bomb::location && !cfg::world::bomb::timer)
+	if (!cfg::world::bomb::location && !cfg::world::bomb::timer && !cfg::world::bomb::damage_calc)
 		return;
 
 	if (!bomb.is_planted)
@@ -462,13 +700,13 @@ void Esp::RenderBomb(Player local, Bomb bomb) {
 	if (!bomb.pos.length())
 		return;
 
+	if (!local.alive)
+		return;
+
 	auto marker = bomb.pos + Vec3_t(0, 0, 20);
 
 	Vec2_t pos;
 	if (!matrix.wts(bomb.pos, io.DisplaySize, pos))
-		return;
-
-	if (!local.alive)
 		return;
 
 	auto distance = bomb.pos.dist_to(local.pos);
@@ -480,25 +718,44 @@ void Esp::RenderBomb(Player local, Bomb bomb) {
 	static int margin = 10;
 	static int padding = 10;
 
-	//auto distance_str = std::format("{}pt", (int)distance);
 	auto duration_str = std::format("{}s", bomb.time_left);
 	auto bombsite_str = std::string(bomb.site == BombSite::A ? "A" : "B");
 
 	std::string bomb_string = "";
 
-	if (cfg::world::bomb::location)
-	{
+	if (cfg::world::bomb::location) {
 		bomb_string += bombsite_str;
 	}
 
-	if (cfg::world::bomb::timer)
-	{
+	if (cfg::world::bomb::timer) {
 		if (cfg::world::bomb::location)
 			bomb_string += " - ";
 		else
 			bomb_string += " ";
 
 		bomb_string += duration_str;
+	}
+
+	// Bomb damage calculator overlay
+	if (cfg::world::bomb::damage_calc) {
+		float dist3d = bomb.pos.dist_to_3d(local.pos);
+		// C4 damage formula (approximate): damage = 500 * (1 - dist/1750), armor reduces it
+		float rawDamage = 500.f * std::max(0.f, 1.f - (dist3d / 1750.f));
+		float damage = rawDamage;
+		if (local.armor > 0 && rawDamage > 0) {
+			// Armor absorbs 50% of damage, reducing armor by damage/2
+			float armorDamage = rawDamage * 0.5f;
+			if (local.armor * 2 < rawDamage) {
+				// Armor exhausted, remaining damage goes to health
+				damage = rawDamage - (float)local.armor;
+			} else {
+				damage = armorDamage;
+			}
+		}
+		bool willDie = damage >= local.health;
+		float survivalDist = 1750.f * (1.f - local.health / 500.f); // distance where damage = health
+
+		bomb_string += std::format(" | {}{}", willDie ? "FATAL" : "Safe", willDie ? "" : std::format(" -{}hp", (int)damage));
 	}
 
 	auto text_size = ImGui::CalcTextSize(bomb_string.data());
@@ -524,6 +781,7 @@ void Esp::RenderBomb(Player local, Bomb bomb) {
 		bomb_string.data()
 	);
 }
+
 void Esp::RenderAimbotFOV() {
 	if (!cfg::aimbot::draw_fov || !cfg::aimbot::enabled)
 		return;

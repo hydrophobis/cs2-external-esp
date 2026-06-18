@@ -6,8 +6,8 @@ namespace offsets
 	inline DWORD localPlayerController;
 	inline DWORD globalVars;
 	inline DWORD plantedC4;
-inline DWORD localPlayerPawn;
-inline DWORD csgoInput;
+	inline DWORD localPlayerPawn;
+	inline DWORD csgoInput;
 
 	// engine2.dll
 	inline DWORD buildNumber;
@@ -19,7 +19,9 @@ inline DWORD csgoInput;
 		constexpr std::ptrdiff_t m_iszPlayerName = 0x6F4; // char[128]
 		constexpr std::ptrdiff_t m_bIsLocalPlayerController = 0x788; // bool
 		constexpr std::ptrdiff_t m_pInGameMoneyServices = 0x808; // CCSPlayerController_InGameMoneyServices*
-		constexpr std::ptrdiff_t m_iAccount = 0x40; // int32 - CCSPlayerController_InGameMoneyServices 
+		constexpr std::ptrdiff_t m_iAccount = 0x40; // int32 - CCSPlayerController_InGameMoneyServices
+		constexpr std::ptrdiff_t m_szClan = 0x7B0; // char[128] - CCSPlayerController
+		constexpr std::ptrdiff_t m_iCompetitiveRanking = 0x864; // int32 - CCSPlayerController
 	}
 
 	namespace pawn {
@@ -32,14 +34,14 @@ inline DWORD csgoInput;
 		constexpr std::ptrdiff_t m_vecAbsVelocity = 0x3FC; // Vector
 
 		constexpr std::ptrdiff_t m_pGameSceneNode = 0x330; // CGameSceneNode*
-		
+
 		constexpr std::ptrdiff_t m_entitySpottedState = 0x1C38; // EntitySpottedState_t
 		constexpr std::ptrdiff_t m_bSpottedByMask = 0xC; // uint32[2] - EntitySpottedState_t
-		
+
 		constexpr std::ptrdiff_t m_flFlashOverlayAlpha = 0x13F4; // float32 - C_CSPlayerPawnBase
 			constexpr std::ptrdiff_t m_flFlashMaxAlpha = 0x13FC; // float32 - C_CSPlayerPawnBase
 			constexpr std::ptrdiff_t m_flFlashDuration = 0x1400; // float32 - C_CSPlayerPawnBase
-		
+
 		constexpr std::ptrdiff_t m_pWeaponServices = 0x11E0; // CPlayer_WeaponServices*
 		constexpr std::ptrdiff_t m_hActiveWeapon = 0x60; // CHandle<C_BasePlayerWeapon> - CPlayer_WeaponServices
 		constexpr std::ptrdiff_t m_flNextAttack = 0xD0; // GameTime_t - CCSPlayer_WeaponServices (bolt/pump cycle delay)
@@ -63,15 +65,23 @@ inline DWORD csgoInput;
 
 		constexpr std::ptrdiff_t m_fFlags = 0x3F8; // uint32 - FL_ONGROUND = (1 << 0)
 
-    constexpr std::ptrdiff_t m_pAimPunchServices = 0x1490; // CCSPlayer_AimPunchServices*
-    constexpr std::ptrdiff_t m_iShotsFired = 0x1C64; // int32
+	    constexpr std::ptrdiff_t m_pAimPunchServices = 0x1490; // CCSPlayer_AimPunchServices*
+	    constexpr std::ptrdiff_t m_iShotsFired = 0x1C64; // int32
 
-    // AimPunchServices offsets (read pointer from m_pAimPunchServices, then offset from that)
-    namespace aimPunchServices {
-        constexpr std::ptrdiff_t m_predictableBaseAngle = 0x50; // QAngle - current aim punch (predictable component)
-    }
+	    // AimPunchServices offsets (read pointer from m_pAimPunchServices, then offset from that)
+	    namespace aimPunchServices {
+	        constexpr std::ptrdiff_t m_predictableBaseAngle = 0x50; // QAngle - current aim punch (predictable component)
+	    }
 
 		constexpr std::ptrdiff_t m_vecViewOffset = 0x1548; // Vector - eye position offset
+
+		// Smoke grenade opacity (C_SmokeGrenadeProjectile)
+		constexpr std::ptrdiff_t m_nSmokeEffectTickBegin = 0x1960; // int32 - tick when smoke started
+		constexpr std::ptrdiff_t m_bSmokeEffectSpawned = 0x1968; // bool
+	}
+
+	namespace smokeGrenade {
+		constexpr std::ptrdiff_t m_smokeEffectAlpha = 0x1B0; // float - smoke overlay alpha factor in the smoke particle effect
 	}
 
 	namespace bomb {
@@ -84,7 +94,7 @@ inline DWORD csgoInput;
 		constexpr std::ptrdiff_t m_flDefuseCountDown = 0x11B0; // GameTime_t - defuse completion time
 		constexpr std::ptrdiff_t m_bBombDefused = 0x11B4; // bool
 
-		constexpr std::ptrdiff_t m_vecAbsOrigin = 0xC8; // VectorWS - CGameSceneNode 
+		constexpr std::ptrdiff_t m_vecAbsOrigin = 0xC8; // VectorWS - CGameSceneNode
 	}
 
 	namespace input {

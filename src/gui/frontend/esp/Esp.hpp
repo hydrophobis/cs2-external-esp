@@ -37,9 +37,12 @@ private:
     void RenderPlayer(Player player, bool mate = false);
     void RenderPlayerBones(Player player, bool mate = false);
     void RenderPlayerBars(Player player, std::pair<Vec2_t, Vec2_t> bounds);
-    void RenderPlayerFalgs(Player player, std::pair<Vec2_t, Vec2_t> bounds, bool mate = false);
+    void RenderPlayerFlags(Player player, std::pair<Vec2_t, Vec2_t> bounds, bool mate = false);
     void RenderPlayerTracker(Player player, std::pair<Vec2_t, Vec2_t> bounds, bool mate = false);
     void RenderPlayerTracers(Player source, Player player, bool mate = false);
+    void RenderPlayerVisionRay(Player local, Player player, bool mate = false);
+    void RenderDroppedWeapons(const std::vector<WorldEntity>& worldEntities, Player local);
+    void RenderGrenades(const std::vector<WorldEntity>& worldEntities, Player local);
 
 	void RenderCrosshair(Player local);
     void RenderAimbotFOV();

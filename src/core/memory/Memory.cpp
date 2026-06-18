@@ -221,3 +221,14 @@ void pProcess::Close()
 {
 	CloseHandle(handle_);
 }
+
+std::string pProcess::GetProcessPath()
+{
+	char buffer[MAX_PATH];
+	DWORD size = sizeof(buffer);
+	if (QueryFullProcessImageNameA(this->handle_, 0, buffer, &size))
+	{
+		return std::string(buffer);
+	}
+	return "";
+}

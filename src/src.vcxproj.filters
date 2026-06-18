@@ -118,6 +118,12 @@
     <ClCompile Include="core\engine\classes\Weapon.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="core\vpk\VpkParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="core\vpk\MapManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="core\engine\classes\ObserverServices.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -398,6 +404,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="core\engine\classes\Weapon.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="core\vpk\VpkParser.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="core\vpk\MapManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="core\engine\classes\ObserverServices.hpp">

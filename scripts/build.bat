@@ -47,6 +47,8 @@ set SRCS=scripts\msvc\compatibility.cpp ^
          src/core/engine/classes/Globals.cpp ^
          src/core/engine/classes/Player.cpp ^
          src/core/engine/classes/Weapon.cpp ^
+         src/core/vpk/VpkParser.cpp ^
+         src/core/vpk/MapManager.cpp ^
          src/core/engine/classes/ObserverServices.cpp ^
          src/core/engine/features/Aimbot.cpp ^
          src/core/engine/features/Bhop.cpp ^

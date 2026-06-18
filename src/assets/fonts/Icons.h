@@ -13,6 +13,11 @@ namespace Icons
     static constexpr const char* BLIND = "\xEE\x84\x86";
     static constexpr const char* SETTINGS = "\xEE\x84\x87";
     static constexpr const char* PEOPLE = "\xEE\x84\x88";
+
+    // Unicode icons for tabs (available in most default fonts)
+    static constexpr const char* MOVEMENT_ICON = "\xe2\x86\x94";       // ↔ (left-right arrow)
+    static constexpr const char* COMBAT_ICON = "\xe2\x9a\x94";        // ⚔ (crossed swords)
+    static constexpr const char* UTILITY_ICON = "\xe2\x9c\xa6";       // ✦ (four-pointed star)
 }
 
 static unsigned int icons_font_len = 5536;

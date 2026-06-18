@@ -50,6 +50,14 @@ void Misc::Thread() {
             p->write<float>(snapshot.local.pawn_addr + offsets::pawn::m_flFlashOverlayAlpha, 0.f);
         }
 
+        // not working rn
+        if (cfg::misc::anti_smoke && snapshot.local.alive) {
+            for (auto& we : snapshot.world_entities) {
+                if (we.type == WorldEntity::Type::GrenadeProjectile && we.item_index == weapon_smokegrenade) {
+                }
+            }
+        }
+
         if (cfg::misc::skin::enabled && snapshot.local.alive && snapshot.local.weapon_ptr) {
             short current = p->read<short>(
                 snapshot.local.weapon_ptr + offsets::pawn::m_AttributeManager
@@ -59,6 +67,31 @@ void Misc::Thread() {
                     snapshot.local.weapon_ptr + offsets::pawn::m_AttributeManager
                     + offsets::pawn::m_Item + offsets::pawn::m_iItemDefinitionIndex,
                     static_cast<short>(cfg::misc::skin::skin_id));
+            }
+        }
+
+        if (cfg::misc::clantag::enabled && cfg::misc::clantag::text[0] != '\0') {
+            uintptr_t localController = p->read<uintptr_t>(client.base + offsets::localPlayerController);
+            if (localController) {
+                p->write_bytes(localController + offsets::controller::m_szClan,
+                    std::vector<uint8_t>(
+                        cfg::misc::clantag::text,
+                        cfg::misc::clantag::text + strnlen(cfg::misc::clantag::text, sizeof(cfg::misc::clantag::text)) + 1
+                    ));
+            }
+        }
+
+        if (cfg::misc::fake_ping::enabled) {
+            uintptr_t localController = p->read<uintptr_t>(client.base + offsets::localPlayerController);
+            if (localController) {
+                p->write<int>(localController + offsets::controller::m_iPing, cfg::misc::fake_ping::ping);
+            }
+        }
+
+        if (cfg::misc::rank_revealer::enabled) {
+            uintptr_t localController = p->read<uintptr_t>(client.base + offsets::localPlayerController);
+            if (localController) {
+                p->write<int>(localController + offsets::controller::m_iCompetitiveRanking, 1);
             }
         }
 
@@ -77,6 +110,7 @@ void Misc::Thread() {
                 for (auto& player : snapshot.players) {
                     if (!player.alive || player.localplayer) continue;
                     if (player.team == snapshot.local.team) continue;
+                    if (cfg::misc::triggerbot::visible_only && !player.visible) continue;
                     if (player.bone_list.empty()) continue;
 
                     for (auto& bone : player.bone_list) {
@@ -109,7 +143,7 @@ void Misc::Thread() {
             }
         }
 
-        if ((cfg::misc::strafe::helper || cfg::misc::strafe::autostrafe) && snapshot.local.alive) {
+        if (cfg::misc::strafe::helper && snapshot.local.alive) {
             uintptr_t pawn = snapshot.local.pawn_addr;
             if (pawn) {
                 uint32_t flags = p->read<uint32_t>(pawn + offsets::pawn::m_fFlags);
@@ -126,7 +160,7 @@ void Misc::Thread() {
                 while (yawDelta > 180.f)  yawDelta -= 360.f;
                 while (yawDelta < -180.f) yawDelta += 360.f;
 
-                if (inAir && cfg::misc::strafe::helper) {
+                if (inAir) {
                     bool aDown = (GetAsyncKeyState('A') & 0x8000) != 0;
                     bool dDown = (GetAsyncKeyState('D') & 0x8000) != 0;
 
@@ -166,6 +200,7 @@ void Misc::Thread() {
             for (auto& player : snapshot.players) {
                 if (!player.alive || player.localplayer) continue;
                 if (player.team == snapshot.local.team) continue;
+                if ((cfg::misc::auto_zeus::visible_only || cfg::misc::auto_knife::visible_only) && !player.visible) continue;
 
                 float dist = player.pos.dist_to_3d(snapshot.local.pos);
 
