@@ -1,3 +1,5 @@
+#pragma once
+
 enum bone_index : DWORD {
     origin = 0,
     pelvis = 1,

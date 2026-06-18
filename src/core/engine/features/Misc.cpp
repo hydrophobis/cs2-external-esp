@@ -1,8 +1,10 @@
 #include "Misc.hpp"
 #include "core/engine/Engine.hpp"
 #include "core/offsets/Offsets.hpp"
+#include "core/engine/classes/Bones.hpp"
 #include <thread>
 #include <cmath>
+#include <algorithm>
 #include <chrono>
 #include <unordered_map>
 #include <mmsystem.h>
@@ -124,6 +126,38 @@ void Misc::Thread() {
                             break;
                         }
                     }
+
+                    if (!onTarget) {
+                        for (int i = 0; i < 17; i++) {
+                            int a = connections[i][0];
+                            int b = connections[i][1];
+                            if (a >= (int)player.bone_list.size() || b >= (int)player.bone_list.size())
+                                continue;
+
+                            Vec2_t screenA, screenB;
+                            if (!snapshot.game.view_matrix.wts(player.bone_list[a].pos, Vec2_t(screenW, screenH), screenA, false))
+                                continue;
+                            if (!snapshot.game.view_matrix.wts(player.bone_list[b].pos, Vec2_t(screenW, screenH), screenB, false))
+                                continue;
+
+                            float abx = screenB.x - screenA.x;
+                            float aby = screenB.y - screenA.y;
+                            float apx = cx - screenA.x;
+                            float apy = cy - screenA.y;
+                            float ab2 = abx * abx + aby * aby;
+                            float t = ab2 > 0.f ? (apx * abx + apy * aby) / ab2 : 0.f;
+                            t = std::clamp(t, 0.f, 1.f);
+                            float closestX = screenA.x + abx * t;
+                            float closestY = screenA.y + aby * t;
+                            float dx = cx - closestX;
+                            float dy = cy - closestY;
+                            if (dx * dx + dy * dy <= fov * fov) {
+                                onTarget = true;
+                                break;
+                            }
+                        }
+                    }
+
                     if (onTarget) break;
                 }
 
