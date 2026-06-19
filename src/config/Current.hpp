@@ -128,6 +128,10 @@ namespace cfg {
 		inline float rcs_x = 2.0f;
 		inline float rcs_y = 2.0f;
 		inline float sensitivity = 2.0f;
+		inline int start_bullet = 0;
+		inline bool flash_check = false;
+		inline bool scope_check = false;
+		inline bool stop_check = false;
 
 		inline bool draw_fov = false;
 		inline color_t fov_color{ 1.f, 1.f, 1.f, 0.5f };
@@ -149,7 +153,7 @@ namespace cfg {
 		inline bool fov_zoom_scale = true;
 		inline bool always_on = false;
 
-		inline bool angle_write = true;
+		inline bool angle_write = false;
 	}
 
 	namespace misc {
@@ -165,6 +169,8 @@ namespace cfg {
 			inline int hotkey = VK_XBUTTON1;
 			inline float fov = 2.0f;
 			inline int delay_ms = 50;
+			inline bool shot_delay = false;
+			inline int shot_delay_ms = 150;
 			inline bool draw = false;
 			inline color_t draw_color{ 1.f, 1.f, 0.f, 0.5f };
 			inline bool always_on = false;

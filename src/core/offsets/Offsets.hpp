@@ -8,6 +8,7 @@ namespace offsets
 	inline DWORD plantedC4;
 	inline DWORD localPlayerPawn;
 	inline DWORD csgoInput;
+	inline DWORD viewAngles;
 
 	// engine2.dll
 	inline DWORD buildNumber;

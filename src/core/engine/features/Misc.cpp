@@ -20,6 +20,8 @@ void Misc::Init() {
 void Misc::Thread() {
     bool triggerScheduled = false;
     std::chrono::steady_clock::time_point triggerFireAt{};
+    std::chrono::steady_clock::time_point triggerShotCooldownUntil{};
+    bool triggerMouseDown = false;
 
     float prevYaw = 0.f;
 
@@ -158,23 +160,63 @@ void Misc::Thread() {
                         }
                     }
 
-                    if (onTarget) break;
+                if (onTarget) break;
                 }
 
-                if (onTarget && !triggerScheduled) {
-                    triggerScheduled = true;
-                    triggerFireAt = now + std::chrono::milliseconds(cfg::misc::triggerbot::delay_ms);
+                bool shotDelayReady = !cfg::misc::triggerbot::shot_delay || now >= triggerShotCooldownUntil;
+
+                if (cfg::misc::triggerbot::shot_delay) {
+                    if (triggerMouseDown) {
+                        mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+                        triggerMouseDown = false;
+                    }
+
+                    if (onTarget && !triggerScheduled && shotDelayReady) {
+                        triggerScheduled = true;
+                        triggerFireAt = now + std::chrono::milliseconds(cfg::misc::triggerbot::delay_ms);
+                    }
+                } else {
+                    if (!onTarget && triggerMouseDown) {
+                        mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+                        triggerMouseDown = false;
+                    }
+
+                    if (onTarget && !triggerScheduled && !triggerMouseDown) {
+                        triggerScheduled = true;
+                        triggerFireAt = now + std::chrono::milliseconds(cfg::misc::triggerbot::delay_ms);
+                    }
+                }
+
+                if (!onTarget && !triggerMouseDown) {
+                    triggerScheduled = false;
                 }
             } else {
+                if (triggerMouseDown) {
+                    mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+                    triggerMouseDown = false;
+                }
                 triggerScheduled = false;
             }
 
             if (triggerScheduled && now >= triggerFireAt) {
                 triggerScheduled = false;
-                mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
-                std::this_thread::sleep_for(std::chrono::milliseconds(50));
-                mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+                if (cfg::misc::triggerbot::shot_delay) {
+                    mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                    mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+                    triggerShotCooldownUntil = std::chrono::steady_clock::now()
+                        + std::chrono::milliseconds(cfg::misc::triggerbot::shot_delay_ms);
+                } else {
+                    mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
+                    triggerMouseDown = true;
+                }
             }
+        } else {
+            if (triggerMouseDown) {
+                mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+                triggerMouseDown = false;
+            }
+            triggerScheduled = false;
         }
 
         if (cfg::misc::strafe::helper && snapshot.local.alive) {
@@ -183,12 +225,9 @@ void Misc::Thread() {
                 uint32_t flags = p->read<uint32_t>(pawn + offsets::pawn::m_fFlags);
                 bool inAir = (flags & 1) == 0;
 
-                uintptr_t inputPtr = p->read<uintptr_t>(client.base + offsets::csgoInput);
                 float curYaw = 0.f;
-                if (inputPtr) {
-                    Vec3_t angles = p->read<Vec3_t>(inputPtr + offsets::input::viewAngles);
-                    curYaw = angles.y;
-                }
+                Vec3_t angles = p->read<Vec3_t>(p->read<uintptr_t>(client.base + offsets::csgoInput) + offsets::viewAngles);
+                curYaw = angles.y;
 
                 float yawDelta = curYaw - prevYaw;
                 while (yawDelta > 180.f)  yawDelta -= 360.f;

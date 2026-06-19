@@ -139,6 +139,10 @@ bool Config::ReadImpl() {
 		cfg::aimbot::rcs_x = data["aimbot"].value("rcs_x", 1.4f);
 		cfg::aimbot::rcs_y = data["aimbot"].value("rcs_y", 1.4f);
 		cfg::aimbot::sensitivity = data["aimbot"].value("sensitivity", 2.0f);
+		cfg::aimbot::start_bullet = data["aimbot"].value("start_bullet", 0);
+		cfg::aimbot::flash_check = data["aimbot"].value("flash_check", false);
+		cfg::aimbot::scope_check = data["aimbot"].value("scope_check", false);
+		cfg::aimbot::stop_check = data["aimbot"].value("stop_check", false);
 		cfg::aimbot::draw_fov = data["aimbot"].value("draw_fov", false);
 		cfg::aimbot::fov_color = JsonToColor(data["aimbot"], "fov_color", { 1.f, 1.f, 1.f, 0.5f });
 		cfg::aimbot::visible_only = data["aimbot"].value("visible_only", false);
@@ -152,7 +156,7 @@ bool Config::ReadImpl() {
 		cfg::aimbot::multi_bone = data["aimbot"].value("multi_bone", false);
 		cfg::aimbot::fov_zoom_scale = data["aimbot"].value("fov_zoom_scale", true);
 		cfg::aimbot::always_on = data["aimbot"].value("always_on", false);
-		cfg::aimbot::angle_write = data["aimbot"].value("angle_write", true);
+		cfg::aimbot::angle_write = data["aimbot"].value("angle_write", false);
 		if (data["aimbot"].contains("bone_priority") && data["aimbot"]["bone_priority"].is_array()) {
 			cfg::aimbot::bone_priority.clear();
 			for (auto& b : data["aimbot"]["bone_priority"])
@@ -169,6 +173,8 @@ bool Config::ReadImpl() {
 		cfg::misc::triggerbot::hotkey = data["misc"]["triggerbot"].value("hotkey", VK_XBUTTON1);
 		cfg::misc::triggerbot::fov = data["misc"]["triggerbot"].value("fov", 2.0f);
 		cfg::misc::triggerbot::delay_ms = data["misc"]["triggerbot"].value("delay_ms", 50);
+		cfg::misc::triggerbot::shot_delay = data["misc"]["triggerbot"].value("shot_delay", false);
+		cfg::misc::triggerbot::shot_delay_ms = data["misc"]["triggerbot"].value("shot_delay_ms", 150);
 		cfg::misc::triggerbot::draw = data["misc"]["triggerbot"].value("draw", false);
 		cfg::misc::triggerbot::draw_color = JsonToColor(data["misc"]["triggerbot"], "draw_color", { 1.f, 1.f, 0.f, 0.5f });
 		cfg::misc::triggerbot::always_on = data["misc"]["triggerbot"].value("always_on", false);
@@ -310,6 +316,10 @@ bool Config::WriteImpl() {
 	data["aimbot"]["rcs_x"] = cfg::aimbot::rcs_x;
 	data["aimbot"]["rcs_y"] = cfg::aimbot::rcs_y;
 	data["aimbot"]["sensitivity"] = cfg::aimbot::sensitivity;
+	data["aimbot"]["start_bullet"] = cfg::aimbot::start_bullet;
+	data["aimbot"]["flash_check"] = cfg::aimbot::flash_check;
+	data["aimbot"]["scope_check"] = cfg::aimbot::scope_check;
+	data["aimbot"]["stop_check"] = cfg::aimbot::stop_check;
 	data["aimbot"]["draw_fov"] = cfg::aimbot::draw_fov;
 	ColorToJson(data["aimbot"], "fov_color", cfg::aimbot::fov_color);
 	data["aimbot"]["visible_only"] = cfg::aimbot::visible_only;
@@ -336,6 +346,8 @@ bool Config::WriteImpl() {
 	data["misc"]["triggerbot"]["hotkey"] = cfg::misc::triggerbot::hotkey;
 	data["misc"]["triggerbot"]["fov"] = cfg::misc::triggerbot::fov;
 	data["misc"]["triggerbot"]["delay_ms"] = cfg::misc::triggerbot::delay_ms;
+	data["misc"]["triggerbot"]["shot_delay"] = cfg::misc::triggerbot::shot_delay;
+	data["misc"]["triggerbot"]["shot_delay_ms"] = cfg::misc::triggerbot::shot_delay_ms;
 	data["misc"]["triggerbot"]["draw"] = cfg::misc::triggerbot::draw;
 	ColorToJson(data["misc"]["triggerbot"], "draw_color", cfg::misc::triggerbot::draw_color);
 	data["misc"]["triggerbot"]["always_on"] = cfg::misc::triggerbot::always_on;

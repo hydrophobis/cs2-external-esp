@@ -79,6 +79,20 @@ bool Dumper::InitImpl() {
 
     offsets::csgoInput = temp - client.base;
     LOGF(VERBOSE, "Found 'csgoInput' offset at 0x{:X}", offsets::csgoInput);
+
+    // View Angles
+    std::vector<DWORD64> viewAnglesList = ScanMemory(offsets::signatures::viewAngles, client.base, client.base + 0x4000000);
+    if (viewAnglesList.empty()) {
+        LOGF(FATAL, "Could not find signature for 'viewAngles'");
+        return false;
+    }
+    DWORD viewAnglesOffsetVal = 0;
+    if (!process->read_raw(viewAnglesList.at(0) + 6, &viewAnglesOffsetVal, sizeof(DWORD))) {
+        LOGF(FATAL, "Could not read offset for 'viewAngles'");
+        return false;
+    }
+    offsets::viewAngles = viewAnglesOffsetVal;
+    LOGF(INFO, "Found 'viewAngles' offset at 0x{:X}", offsets::viewAngles);
 #endif
 
     // engine2.dll

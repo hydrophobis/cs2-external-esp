@@ -121,6 +121,8 @@ void Menu::RenderImpl() {
 							ImGui::ColorEdit4("Team box color", cfg::esp::colors::box_team.data(), color_flags);
 							ImGui::SameLine();
 							ImGui::ColorEdit4("Enemy box color", cfg::esp::colors::box_enemy.data(), color_flags);
+							ImGui::SameLine();
+							ImGui::ColorEdit4("Spotted box color", cfg::esp::colors::box_visible.data(), color_flags);
 						}
 						ImGui::EndDisabled();
 
@@ -131,6 +133,8 @@ void Menu::RenderImpl() {
 							ImGui::ColorEdit4("Team skeleton color", cfg::esp::colors::skeleton_team.data(), color_flags);
 							ImGui::SameLine();
 							ImGui::ColorEdit4("Enemy skeleton color", cfg::esp::colors::skeleton_enemy.data(), color_flags);
+							ImGui::SameLine();
+							ImGui::ColorEdit4("Spotted skeleton color", cfg::esp::colors::skeleton_visible.data(), color_flags);
 						}
 						ImGui::EndDisabled();
 
@@ -269,10 +273,18 @@ void Menu::RenderImpl() {
 					ImGui::Checkbox("Enable Aimbot", &cfg::aimbot::enabled);
 					ImGui::BeginDisabled(!cfg::aimbot::enabled);
 					{
-						ImGui::Checkbox("Angle Write", &cfg::aimbot::angle_write);
-						ImGui::SetItemTooltip("Writes view angles directly instead of mouse movement (more accurate, bypasses mouse events)");
+						// ImGui::Checkbox("Angle Write", &cfg::aimbot::angle_write);
+						// ImGui::SetItemTooltip("Writes view angles directly instead of mouse movement");
 						ImGui::Checkbox("Visible Targets Only", &cfg::aimbot::visible_only);
 						ImGui::SetItemTooltip("Only aim at targets that are currently visible to you");
+						ImGui::Checkbox("Flash Check", &cfg::aimbot::flash_check);
+						ImGui::SetItemTooltip("Pause aimbot while you are flashed");
+						ImGui::Checkbox("Scope Check", &cfg::aimbot::scope_check);
+						ImGui::SetItemTooltip("Only aim with scoped weapons when scoped in");
+						ImGui::Checkbox("Stop Check", &cfg::aimbot::stop_check);
+						ImGui::SetItemTooltip("Only aim when your movement is nearly stopped");
+						ImGui::SliderInt("Start Bullet", &cfg::aimbot::start_bullet, 0, 5, "%d");
+						ImGui::SetItemTooltip("Delay aimbot until after a few shots have been fired");
 
 						ImGui::SliderFloat("FOV", &cfg::aimbot::fov, 1.0f, 180.0f, "%.1f");
 						ImGui::Checkbox("Draw FOV", &cfg::aimbot::draw_fov);
@@ -483,6 +495,13 @@ void Menu::RenderImpl() {
 					{
 						ImGui::SliderFloat("Trigger FOV", &cfg::misc::triggerbot::fov, 0.5f, 20.0f, "%.1f px");
 						ImGui::SliderInt("Trigger Delay", &cfg::misc::triggerbot::delay_ms, 0, 300, "%d ms");
+						ImGui::Checkbox("Shot Delay", &cfg::misc::triggerbot::shot_delay);
+						ImGui::SetItemTooltip("On: wait between shots. Off: hold the mouse down while a target stays in range.");
+						ImGui::BeginDisabled(!cfg::misc::triggerbot::shot_delay);
+						{
+							ImGui::SliderInt("Shot Delay Time", &cfg::misc::triggerbot::shot_delay_ms, 0, 1000, "%d ms");
+						}
+						ImGui::EndDisabled();
 						ImGui::Checkbox("Visible Targets Only", &cfg::misc::triggerbot::visible_only);
 						ImGui::SetItemTooltip("Only trigger on targets that are currently visible to you");
 
